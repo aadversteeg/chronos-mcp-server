@@ -17,6 +17,23 @@ jobs:
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
       
+      - name: Update version in project file
+        run: |
+          # Extract the version from the tag
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          echo "Updating project version to $VERSION"
+          
+          # Use XML tool to update the version in the project file
+          # This updates AssemblyVersion, FileVersion, and Version properties
+          sed -i \
+            -e "s/<AssemblyVersion>.*<\/AssemblyVersion>/<AssemblyVersion>$VERSION<\/AssemblyVersion>/g" \
+            -e "s/<FileVersion>.*<\/FileVersion>/<FileVersion>$VERSION<\/FileVersion>/g" \
+            -e "s/<Version>.*<\/Version>/<Version>$VERSION<\/Version>/g" \
+            src/Core.Infrastructure.McpServer/Core.Infrastructure.McpServer.csproj
+          
+          # Show the updated file for verification
+          cat src/Core.Infrastructure.McpServer/Core.Infrastructure.McpServer.csproj
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       
