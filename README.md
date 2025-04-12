@@ -38,7 +38,9 @@ The Chronos MCP server is built with .NET Core using the Model Context Protocol 
 
 ## Docker Support
 
-```
+### Manual Docker Build
+
+```bash
 # Build the Docker image
 docker build -f src/Core.Infrastructure.McpServer/Dockerfile -t chronos-mcp-server:latest src/
 
@@ -46,6 +48,38 @@ docker build -f src/Core.Infrastructure.McpServer/Dockerfile -t chronos-mcp-serv
 docker tag chronos-mcp-server:latest localhost:5000/chronos-mcp-server:latest
 docker push localhost:5000/chronos-mcp-server:latest
 ```
+
+### DockerHub Image
+
+The Chronos MCP Server is available on DockerHub at `aadversteeg/chronos-mcp-server`.
+
+```bash
+# Pull the latest version
+docker pull aadversteeg/chronos-mcp-server:latest
+
+# Or pull a specific version
+docker pull aadversteeg/chronos-mcp-server:1.0.0
+```
+
+### Automated Builds with GitHub Actions
+
+This repository includes a GitHub Actions workflow that automatically builds and pushes the Docker image to DockerHub when a version tag is created.
+
+To trigger a new build:
+
+1. Create and push a tag with a semantic version:
+   ```bash
+   git tag 1.0.0
+   git push origin 1.0.0
+   ```
+
+2. The workflow will automatically build and push the Docker image with the tags:
+   - `aadversteeg/chronos-mcp-server:latest`
+   - `aadversteeg/chronos-mcp-server:1.0.0`
+
+For this to work, you need to set up these secrets in your GitHub repository:
+- `DOCKERHUB_USERNAME`: Your Docker Hub username
+- `DOCKERHUB_TOKEN`: Your Docker Hub access token (create at https://hub.docker.com/settings/security)
 
 ## Configuration
 
@@ -131,14 +165,12 @@ To use the Chronos server from a Docker container:
     "--rm",
     "-i",
     "-e", "DefaultTimeZoneId=Europe/Amsterdam",
-    "localhost:5000/chronos-mcp-server:latest"
+    "aadversteeg/chronos-mcp-server:latest"
   ]
 }
 ```
 
 2. Save the file and restart Claude Desktop
-
-This configuration assumes your Docker container is pushed to a local registry at `localhost:5000`. Adjust the URL as needed for your local registry configuration.
 
 ## License
 
