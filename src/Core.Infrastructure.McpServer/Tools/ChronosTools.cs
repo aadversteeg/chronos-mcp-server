@@ -44,7 +44,7 @@ namespace Core.Infrastructure.McpServer.Tools
 
         [McpServerTool(Name = "get_current_date_and_time"), Description("Gets the current date and time in the specified timezone or the default timezone.")]
         public string GetCurrentDateAndTime(
-            [Description("The timezone identifier (e.g., 'America/New_York', 'Eastern Standard Time'). If omitted, uses configured default.")] 
+            [Description("Optional: the timezone identifier (e.g., 'America/New_York', 'Eastern Standard Time'). If not specified, the default timezone id will be used.")] 
             string? timezoneId = null)
         {
             try
