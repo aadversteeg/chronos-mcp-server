@@ -9,45 +9,61 @@ The Chronos MCP server is built with .NET Core using the Model Context Protocol 
 ## Features
 
 - Get current date and time in any supported timezone
-- Default timezone configuration through appsettings.json end environment
+- Default timezone configuration through appsettings.json and environment variables
 - Proper error handling for invalid timezone requests
 
 ## Getting Started
 
 ### Prerequisites
 
-- .NET 9.0
-- Docker (optional, for container deployment)
+- .NET 9.0 (for local development/deployment)
+- Docker (for container deployment)
 
-### Build Instructions
+### Using the Docker Image
+
+The easiest way to use Chronos MCP Server is via the pre-built Docker image from DockerHub:
+
+```bash
+# Run the server with default UTC timezone
+docker run -d --name chronos-mcp aadversteeg/chronos-mcp-server:latest
+
+# Run the server with a custom timezone
+docker run -d --name chronos-mcp -e "DefaultTimeZoneId=America/New_York" aadversteeg/chronos-mcp-server:latest
+
+# Run the server in interactive mode (for use with Claude Desktop)
+docker run --rm -i -e "DefaultTimeZoneId=Europe/Amsterdam" aadversteeg/chronos-mcp-server:latest
+```
+
+### Build Instructions (for development)
+
+If you want to build the project from source:
 
 1. Clone this repository:
-   ```
+   ```bash
    git clone https://github.com/aadversteeg/chronos-mcp-server.git
    ```
 
 2. Navigate to the project root directory:
-   ```
+   ```bash
    cd chronos-mcp-server
    ```
 
 3. Build the project using:
-   ```
+   ```bash
    dotnet build src/chronos.sln
    ```
 
+4. Run the tests:
+   ```bash
+   dotnet test src/chronos.sln
+   ```
+
+5. Run the server locally:
+   ```bash
+   dotnet run --project src/Core.Infrastructure.McpServer/Core.Infrastructure.McpServer.csproj
+   ```
+
 ## Docker Support
-
-### Manual Docker Build
-
-```bash
-# Build the Docker image
-docker build -f src/Core.Infrastructure.McpServer/Dockerfile -t chronos-mcp-server:latest src/
-
-# Push to a local registry
-docker tag chronos-mcp-server:latest localhost:5000/chronos-mcp-server:latest
-docker push localhost:5000/chronos-mcp-server:latest
-```
 
 ### DockerHub Image
 
@@ -58,7 +74,22 @@ The Chronos MCP Server is available on DockerHub at `aadversteeg/chronos-mcp-ser
 docker pull aadversteeg/chronos-mcp-server:latest
 
 # Or pull a specific version
-docker pull aadversteeg/chronos-mcp-server:1.0.0
+docker pull aadversteeg/chronos-mcp-server:0.0.1
+```
+
+### Manual Docker Build
+
+If you need to build the Docker image yourself:
+
+```bash
+# Navigate to the repository root
+cd chronos-mcp-server
+
+# Build the Docker image
+docker build -f src/Core.Infrastructure.McpServer/Dockerfile -t chronos-mcp-server:latest src/
+
+# Run the locally built image
+docker run -d --name chronos-mcp -e "DefaultTimeZoneId=UTC" chronos-mcp-server:latest
 ```
 
 ### Automated Builds with GitHub Actions
@@ -77,9 +108,60 @@ To trigger a new build:
    - `aadversteeg/chronos-mcp-server:latest`
    - `aadversteeg/chronos-mcp-server:1.0.0`
 
-For this to work, you need to set up these secrets in your GitHub repository:
-- `DOCKERHUB_USERNAME`: Your Docker Hub username
-- `DOCKERHUB_TOKEN`: Your Docker Hub access token (create at https://hub.docker.com/settings/security)
+## MCP Protocol Usage
+
+### Client Integration
+
+To connect to the Chronos MCP Server from your applications:
+
+1. Use the Model Context Protocol C# SDK or any MCP-compatible client
+2. Configure your client to connect to the server's endpoint
+3. Call the available tools described below
+
+### Available Tools
+
+#### get_current_date_and_time
+
+Gets the current date and time in the specified timezone or the default timezone.
+
+Parameters:
+- `timezoneId` (optional): The timezone identifier (e.g., 'America/New_York', 'Eastern Standard Time').
+
+Example request:
+```json
+{
+  "name": "get_current_date_and_time",
+  "parameters": {
+    "timezoneId": "Europe/London"
+  }
+}
+```
+
+Example response:
+```json
+{
+  "date": "2023-12-25",
+  "time": "12:00:00",
+  "timezone": "Europe/London"
+}
+```
+
+#### get_default_timezone_id
+
+Gets the default timezone identifier configured for the server.
+
+Example request:
+```json
+{
+  "name": "get_default_timezone_id",
+  "parameters": {}
+}
+```
+
+Example response:
+```
+UTC
+```
 
 ## Configuration
 
@@ -89,47 +171,24 @@ The `DefaultTimeZoneId` setting determines which timezone is used when no specif
 
 You can set the DefaultTimeZoneId in two ways:
 
-1. **appsettings.json** file:
+1. **appsettings.json** file (for local deployment):
 ```json
 {
   "DefaultTimeZoneId": "America/New_York"
 }
 ```
 
-2. **Environment Variables** (useful for containerized deployments)
+2. **Environment Variables** (for containerized deployments):
+```bash
+# When running the Docker container
+docker run -e "DefaultTimeZoneId=Europe/Amsterdam" aadversteeg/chronos-mcp-server:latest
+```
 
 Valid timezone identifiers include:
 - Standard IANA timezone names (e.g., "America/New_York", "Europe/London", "Asia/Tokyo")
 - Windows timezone IDs (e.g., "Eastern Standard Time", "W. Europe Standard Time")
 
 If not specified, the server defaults to "UTC".
-
-## Available Tools
-
-### get_current_date_and_time
-
-Gets the current date and time in the specified timezone or the default timezone.
-
-Parameters:
-- `timezoneId` (optional): The timezone identifier (e.g., 'America/New_York', 'Eastern Standard Time').
-
-Example response:
-```json
-{
-  "date": "2023-12-25",
-  "time": "12:00:00",
-  "timezone": "America/New_York"
-}
-```
-
-### get_default_timezone_id
-
-Gets the default timezone identifier configured for the server.
-
-Example response:
-```
-UTC
-```
 
 ## Configuring Claude Desktop
 
@@ -154,7 +213,7 @@ To configure Claude Desktop to use a locally installed Chronos server:
 
 ### Using Docker Container
 
-To use the Chronos server from a Docker container:
+To use the Chronos server from a Docker container with Claude Desktop:
 
 1. Add the server configuration to the `mcpServers` section in your Claude Desktop configuration:
 ```json
