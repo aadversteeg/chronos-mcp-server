@@ -19,20 +19,6 @@ The Chronos MCP server is built with .NET Core using the Model Context Protocol 
 - .NET 9.0 (for local development/deployment)
 - Docker (for container deployment)
 
-### Using the Docker Image
-
-The easiest way to use Chronos MCP Server is via the pre-built Docker image from DockerHub:
-
-```bash
-# Run the server with default UTC timezone
-docker run -d --name chronos-mcp aadversteeg/chronos-mcp-server:latest
-
-# Run the server with a custom timezone
-docker run -d --name chronos-mcp -e "DefaultTimeZoneId=America/New_York" aadversteeg/chronos-mcp-server:latest
-
-# Run the server in interactive mode (for use with Claude Desktop)
-docker run --rm -i -e "DefaultTimeZoneId=Europe/Amsterdam" aadversteeg/chronos-mcp-server:latest
-```
 
 ### Build Instructions (for development)
 
@@ -56,11 +42,6 @@ If you want to build the project from source:
 4. Run the tests:
    ```bash
    dotnet test src/chronos.sln
-   ```
-
-5. Run the server locally:
-   ```bash
-   dotnet run --project src/Core.Infrastructure.McpServer/Core.Infrastructure.McpServer.csproj
    ```
 
 ## Docker Support
