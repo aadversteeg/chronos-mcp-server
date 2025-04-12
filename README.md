@@ -36,29 +36,13 @@ The Chronos MCP server is built with .NET Core using the Model Context Protocol 
    dotnet build src/chronos.sln
    ```
 
-## Running the Server
-
-After building, you can run the server using:
-
-```
-dotnet run --project src/Core.Infrastructure.McpServer/Core.Infrastructure.McpServer.csproj
-```
-
 ## Docker Support
-
-You can also build and run the server using Docker:
 
 ```
 # Build the Docker image
 docker build -f src/Core.Infrastructure.McpServer/Dockerfile -t chronos-mcp-server:latest src/
 
-# Run the container
-docker run -it --rm chronos-mcp-server:latest
-```
-
-To push to a local registry:
-
-```
+# Push to a local registry
 docker tag chronos-mcp-server:latest localhost:5000/chronos-mcp-server:latest
 docker push localhost:5000/chronos-mcp-server:latest
 ```
