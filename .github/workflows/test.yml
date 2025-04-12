@@ -44,16 +44,28 @@ jobs:
     
     - name: Test Docker image
       run: |
-        # Run the container briefly to make sure it starts correctly
-        docker run --name test-container -d chronos-mcp-server:test
-        # Give it a second to start
-        sleep 5
-        # Check if it's running
-        if ! docker ps | grep test-container; then
-          echo "Container failed to start properly"
-          docker logs test-container
+        # Run the container and capture logs - we expect it to exit since MCP servers exit without input
+        echo "Running container..."
+        container_id=$(docker run --name test-container -d chronos-mcp-server:test)
+        
+        # Wait a few seconds for logs to be generated
+        sleep 3
+        
+        # Capture logs
+        echo "Container logs:"
+        docker logs test-container
+        
+        # Check logs for expected startup messages
+        if docker logs test-container 2>&1 | grep -q "Starting MCP Chronos Server" && \
+           docker logs test-container 2>&1 | grep -q "Transport entering read messages loop" && \
+           docker logs test-container 2>&1 | grep -q "Application started"; then
+          echo "✅ Container started successfully with expected log messages"
+        else
+          echo "❌ Container did not show expected startup messages"
           exit 1
         fi
-        # Clean up
-        docker stop test-container
-        docker rm test-container
+        
+        # Clean up regardless of container state
+        docker rm -f test-container || true
+        
+        echo "Test completed successfully"
