@@ -212,6 +212,16 @@ To use the Chronos server from a Docker container with Claude Desktop:
 
 2. Save the file and restart Claude Desktop
 
+## Configuring Claude Code
+
+To add the chronos server to Claude Code, use the following command:
+
+```bash
+claude mcp add chronos -- docker run -i --rm -e DefaultTimeZoneId=Europe/Amsterdam aadversteeg/chronos-mcp-server:latest
+```
+
+You can customize the default timezone by modifying the DefaultTimeZoneId environment variable.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
