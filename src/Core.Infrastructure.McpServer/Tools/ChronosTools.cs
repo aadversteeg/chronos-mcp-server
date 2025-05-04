@@ -1,5 +1,7 @@
-﻿using Core.Application.Services;
+﻿using Core.Application.Models;
+using Core.Application.Services;
 using Microsoft.Extensions.Logging;
+using ModelContextProtocol;
 using ModelContextProtocol.Server;
 using System;
 using System.ComponentModel;
@@ -40,16 +42,16 @@ namespace Core.Infrastructure.McpServer.Tools
         {
             try
             {
-                var (currentDateTimeInTimezone, timezoneIdToUse) = _timeService.GetCurrentTimeWithTimezone(timezoneId);
+                DateTimeWithTimeZoneId result = _timeService.GetCurrentTimeWithTimezone(timezoneId);
                 
-                _logger.LogInformation("Returning current time for timezone: {Timezone}", timezoneIdToUse);
+                _logger.LogInformation("Returning current time for timezone: {Timezone}", result.UsedTimezoneId);
 
                 // Create structured response
                 var response = new
                 {
-                    Date = currentDateTimeInTimezone.ToString("yyyy-MM-dd"),
-                    Time = currentDateTimeInTimezone.ToString("HH:mm:ss"),
-                    Timezone = timezoneIdToUse,
+                    Date = result.CurrentDateTime.ToString("yyyy-MM-dd"),
+                    Time = result.CurrentDateTime.ToString("HH:mm:ss"),
+                    Timezone = result.UsedTimezoneId,
                 };
 
                 return JsonSerializer.Serialize(response, JsonOptions);
@@ -57,7 +59,7 @@ namespace Core.Infrastructure.McpServer.Tools
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current date and time");
-                return JsonSerializer.Serialize(new { Error = ex.Message }, JsonOptions);
+                throw new McpException("Error getting current date and time", ex);
             }
         }
 
@@ -72,7 +74,7 @@ namespace Core.Infrastructure.McpServer.Tools
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting default time zone information");
-                return JsonSerializer.Serialize(new { Error = ex.Message }, JsonOptions);
+                throw new McpException("Error getting default time zone information", ex);
             }
         }
     }

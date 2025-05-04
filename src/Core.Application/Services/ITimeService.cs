@@ -1,4 +1,5 @@
 using System;
+using Core.Application.Models;
 
 namespace Core.Application.Services
 {
@@ -31,8 +32,8 @@ namespace Core.Application.Services
         /// Gets the current date and time in the specified timezone or the default timezone if not specified.
         /// </summary>
         /// <param name="timezoneId">The ID of the timezone to get the current time for, or null/empty to use default</param>
-        /// <returns>A tuple containing the current date and time in the timezone and the timezone ID used</returns>
+        /// <returns>A record containing the current date and time in the timezone and the timezone ID used</returns>
         /// <exception cref="TimeZoneNotFoundException">Thrown when the specified timezone ID is not found</exception>
-        (DateTime CurrentDateTime, string UsedTimezoneId) GetCurrentTimeWithTimezone(string? timezoneId);
+        DateTimeWithTimeZoneId GetCurrentTimeWithTimezone(string? timezoneId);
     }
 }

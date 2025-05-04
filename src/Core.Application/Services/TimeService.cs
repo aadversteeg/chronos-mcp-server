@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Extensions.Logging;
+using Core.Application.Models;
 
 namespace Core.Application.Services
 {
@@ -70,7 +71,7 @@ namespace Core.Application.Services
         }
         
         /// <inheritdoc />
-        public (DateTime CurrentDateTime, string UsedTimezoneId) GetCurrentTimeWithTimezone(string? timezoneId)
+        public DateTimeWithTimeZoneId GetCurrentTimeWithTimezone(string? timezoneId)
         {
             try
             {
@@ -97,7 +98,7 @@ namespace Core.Application.Services
                     _logger.LogInformation("Using specified timezone: {Timezone}", usedTimezoneId);
                 }
 
-                return (currentDateTime, usedTimezoneId);
+                return new DateTimeWithTimeZoneId(currentDateTime, usedTimezoneId);
             }
             catch (TimeZoneNotFoundException ex)
             {

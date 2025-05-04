@@ -54,15 +54,13 @@ namespace Core.Infrastructure.McpServer
             string defaultTimeZoneId = builder.Configuration.GetValue<string>("DefaultTimeZoneId") ?? "UTC";
 
             var defaultTimeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(defaultTimeZoneId);
+            builder.Services.AddApplicationServices(defaultTimeZoneInfo);
 
             // Create and register ChronosToolSettings with DI
             var toolSettings = new ChronosToolSettings() { 
                 DefaultTimezoneInfo = defaultTimeZoneInfo
             };
             builder.Services.AddSingleton(toolSettings);
-            
-            // Register Core.Application services (TimeService)
-            toolSettings.RegisterTimeService(builder.Services);
                 
             // Register MCP server and reference the ChronosTools
             builder.Services
