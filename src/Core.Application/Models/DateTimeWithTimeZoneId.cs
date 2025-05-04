@@ -2,5 +2,5 @@
 
 namespace Core.Application.Models
 {
-    public record DateTimeWithTimeZoneId(DateTime CurrentDateTime, string UsedTimezoneId);
+    public record DateTimeWithTimeZoneId(DateTime CurrentDateTime, TimeZoneId UsedTimezoneId);
 }

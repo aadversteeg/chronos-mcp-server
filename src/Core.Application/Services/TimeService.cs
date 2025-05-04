@@ -1,6 +1,8 @@
 using System;
 using Microsoft.Extensions.Logging;
 using Core.Application.Models;
+using Ave.Extensions.Functional;
+using Core.Application.Extensions;
 
 namespace Core.Application.Services
 {
@@ -10,106 +12,56 @@ namespace Core.Application.Services
     public class TimeService : ITimeService
     {
         private readonly ILogger<TimeService> _logger;
-        private readonly TimeZoneInfo _defaultTimeZone;
+        private readonly TimeZoneId? _defaultTimeZoneId;
         private readonly Func<DateTime> _currentDateTimeProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TimeService"/> class.
         /// </summary>
         /// <param name="logger">The logger instance</param>
-        /// <param name="defaultTimeZone">The default timezone to use</param>
+        /// <param name="defaultTimeZoneId">The default timezone id to use</param>
         /// <param name="currentDateTimeProvider">Provider function for the current date and time</param>
         /// <exception cref="ArgumentNullException">Thrown when any parameter is null</exception>
         public TimeService(
             ILogger<TimeService> logger,
-            TimeZoneInfo defaultTimeZone,
+            TimeZoneId? defaultTimeZoneId,
             Func<DateTime> currentDateTimeProvider)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _defaultTimeZone = defaultTimeZone ?? throw new ArgumentNullException(nameof(defaultTimeZone));
+            _defaultTimeZoneId = defaultTimeZoneId;
             _currentDateTimeProvider = currentDateTimeProvider ?? throw new ArgumentNullException(nameof(currentDateTimeProvider));
-            
-            _logger.LogInformation("TimeService initialized with default timezone: {Timezone}", _defaultTimeZone.Id);
         }
 
         /// <inheritdoc />
-        public DateTime GetCurrentTime()
+        public Result<TimeZoneInfo, Error> GetDefaultTimeZone()
         {
-            return _currentDateTimeProvider();
-        }
-
-        /// <inheritdoc />
-        public TimeZoneInfo GetDefaultTimeZone()
-        {
-            _logger.LogInformation("Getting default timezone: {Timezone}", _defaultTimeZone.Id);
-            return _defaultTimeZone;
-        }
-
-        /// <inheritdoc />
-        public DateTime GetCurrentTimeInTimeZone(string timezoneId)
-        {
-            try
+            if (_defaultTimeZoneId == null)
             {
-                var targetTimeZone = string.IsNullOrEmpty(timezoneId)
-                    ? _defaultTimeZone
-                    : TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
-
-                _logger.LogInformation("Converting current time to timezone: {Timezone}", targetTimeZone.Id);
-                var currentDateTime = _currentDateTimeProvider();
-                return TimeZoneInfo.ConvertTime(currentDateTime, targetTimeZone);
+                return Result<TimeZoneInfo, Error>.Failure(Errors.NoDefaultTimeZoneId);
             }
-            catch (TimeZoneNotFoundException ex)
-            {
-                _logger.LogError(ex, "Timezone not found: {TimezoneId}", timezoneId);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error converting time to timezone: {TimezoneId}", timezoneId);
-                throw;
-            }
+
+            var timeZoneInfo = TimeZoneInfo
+                .FindSystemTimeZoneById(_defaultTimeZoneId.Value);
+
+            return Result<TimeZoneInfo, Error>
+                .Success(timeZoneInfo);
         }
-        
+
         /// <inheritdoc />
-        public DateTimeWithTimeZoneId GetCurrentTimeWithTimezone(string? timezoneId)
+        public Result<DateTimeWithTimeZoneId, Error> GetCurrentTimeWithTimezone(TimeZoneId? maybeTimeZoneId)
         {
-            try
-            {
-                DateTime currentDateTime;
-                string usedTimezoneId;
-                
-                if (string.IsNullOrEmpty(timezoneId))
+            return maybeTimeZoneId
+                .Ensure(_defaultTimeZoneId, Errors.NoDefaultTimeZoneId)
+                .OnSuccessMap(timeZoneId =>
                 {
-                    // Use default timezone
-                    currentDateTime = TimeZoneInfo.ConvertTime(
+                    var timeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId.Value);
+                    var currentDateTime = TimeZoneInfo.ConvertTime(
                         _currentDateTimeProvider(),
-                        _defaultTimeZone);
-                    usedTimezoneId = _defaultTimeZone.Id;
-                    _logger.LogInformation("Using default timezone: {Timezone}", usedTimezoneId);
-                }
-                else
-                {
-                    // Use specified timezone
-                    var targetTimeZone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
-                    currentDateTime = TimeZoneInfo.ConvertTime(
-                        _currentDateTimeProvider(),
-                        targetTimeZone);
-                    usedTimezoneId = timezoneId;
-                    _logger.LogInformation("Using specified timezone: {Timezone}", usedTimezoneId);
-                }
+                        timeZone);
 
-                return new DateTimeWithTimeZoneId(currentDateTime, usedTimezoneId);
-            }
-            catch (TimeZoneNotFoundException ex)
-            {
-                _logger.LogError(ex, "Timezone not found: {TimezoneId}", timezoneId);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error converting time with timezone: {TimezoneId}", timezoneId);
-                throw;
-            }
+                    return new DateTimeWithTimeZoneId(currentDateTime, timeZoneId);
+
+                });
         }
     }
 }

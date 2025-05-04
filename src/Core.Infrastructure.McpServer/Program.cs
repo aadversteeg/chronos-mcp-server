@@ -1,4 +1,6 @@
 ﻿using Core.Application;
+using Core.Application.Extensions;
+using Core.Application.Models;
 using Core.Infrastructure.McpServer.Tools;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +30,7 @@ namespace Core.Infrastructure.McpServer
             var builder = Host.CreateApplicationBuilder(args);
 
             // Add appsettings.json configuration, use full path in case working folder is different
-            string? basePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            string? basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             basePath ??= Directory.GetCurrentDirectory();
 
             builder.Configuration.AddJsonFile(
@@ -49,18 +51,15 @@ namespace Core.Infrastructure.McpServer
                 // Configure all logs to go to stderr
                 consoleLogOptions.LogToStandardErrorThreshold = LogLevel.Trace;
             });
-            
-            // Get DefaultTimeZoneId from config 
-            string defaultTimeZoneId = builder.Configuration.GetValue<string>("DefaultTimeZoneId") ?? "UTC";
 
-            var defaultTimeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(defaultTimeZoneId);
-            builder.Services.AddApplicationServices(defaultTimeZoneInfo);
+            var defaultTimeZoneId = builder.Configuration
+                .GetValue<string>("DefaultTimeZoneId")
+                .Bind(TimeZoneId.Create)
+                .Unwrap();
 
-            // Create and register ChronosToolSettings with DI
-            var toolSettings = new ChronosToolSettings() { 
-                DefaultTimezoneInfo = defaultTimeZoneInfo
-            };
-            builder.Services.AddSingleton(toolSettings);
+            builder.Services.AddApplicationServices(
+                defaultTimeZoneId, 
+                () => DateTime.UtcNow);
                 
             // Register MCP server and reference the ChronosTools
             builder.Services

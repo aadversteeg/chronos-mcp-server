@@ -4,13 +4,14 @@ A time-related server implementing the Model Context Protocol (MCP). This server
 
 ## Overview
 
-The Chronos MCP server is built with .NET Core using the Model Context Protocol C# SDK ([github.com/modelcontextprotocol/csharp-sdk](https://github.com/modelcontextprotocol/csharp-sdk)). It provides tools for accessing date and time information in different timezones. The server is designed to be lightweight and demonstrates how to create a custom MCP server with practical functionality. It can be deployed either directly on a machine or as a Docker container.
+The Chronos MCP server is built with .NET Core using the Model Context Protocol C# SDK ([github.com/modelcontextprotocol/csharp-sdk](https://github.com/modelcontextprotocol/csharp-sdk)). It provides tools for accessing date and time information in different timezones. The server is designed to be lightweight and demonstrates how to create a custom MCP server with practical functionality and proper error handling. It can be deployed either directly on a machine or as a Docker container.
 
 ## Features
 
 - Get current date and time in any supported timezone
-- Default timezone configuration through appsettings.json and environment variables
-- Proper error handling for invalid timezone requests
+- Optional default timezone configuration through appsettings.json and environment variables
+- Proper error handling for invalid timezone requests and missing default timezone
+- Functional error handling using Result pattern
 
 ## Getting Started
 
@@ -69,8 +70,8 @@ cd chronos-mcp-server
 # Build the Docker image
 docker build -f src/Core.Infrastructure.McpServer/Dockerfile -t chronos-mcp-server:latest src/
 
-# Run the locally built image
-docker run -d --name chronos-mcp -e "DefaultTimeZoneId=UTC" chronos-mcp-server:latest
+# Run the locally built image (with optional DefaultTimeZoneId)
+docker run -d --name chronos-mcp -e "DefaultTimeZoneId=Europe/Amsterdam" chronos-mcp-server:latest
 ```
 
 ### Automated Builds with GitHub Actions
@@ -103,10 +104,10 @@ To connect to the Chronos MCP Server from your applications:
 
 #### get_current_date_and_time
 
-Gets the current date and time in the specified timezone or the default timezone.
+Gets the current date and time in the specified timezone or the default timezone (if configured).
 
 Parameters:
-- `timezoneId` (optional): The timezone identifier (e.g., 'America/New_York', 'Eastern Standard Time').
+- `timezoneId` (optional if DefaultTimeZoneId is configured): The timezone identifier (e.g., 'America/New_York', 'Eastern Standard Time'). This parameter is required if no DefaultTimeZoneId is configured.
 
 Example request:
 ```json
@@ -129,7 +130,7 @@ Example response:
 
 #### get_default_timezone_id
 
-Gets the default timezone identifier configured for the server.
+Gets the default timezone identifier configured for the server. Returns an error if no default timezone is configured.
 
 Example request:
 ```json
@@ -139,16 +140,26 @@ Example request:
 }
 ```
 
-Example response:
+Example response (if configured):
 ```
-UTC
+Europe/Amsterdam
+```
+
+Example error response (if not configured):
+```json
+{
+  "error": {
+    "message": "DefaultTimeZoneId is not set.",
+    "code": "NoDefaultTimeZoneId"
+  }
+}
 ```
 
 ## Configuration
 
 ### DefaultTimeZoneId
 
-The `DefaultTimeZoneId` setting determines which timezone is used when no specific timezone is requested. This value must be a valid timezone identifier recognized by the operating system.
+The `DefaultTimeZoneId` setting determines which timezone is used when no specific timezone is requested. This value must be a valid timezone identifier recognized by the operating system. This setting is optional - if not provided, the server will still function but will require a timezone ID parameter for each request.
 
 You can set the DefaultTimeZoneId in two ways:
 
@@ -169,7 +180,7 @@ Valid timezone identifiers include:
 - Standard IANA timezone names (e.g., "America/New_York", "Europe/London", "Asia/Tokyo")
 - Windows timezone IDs (e.g., "Eastern Standard Time", "W. Europe Standard Time")
 
-If not specified, the server defaults to "UTC".
+If the DefaultTimeZoneId setting is not specified, no default timezone will be used, and requests must explicitly provide a timezone ID parameter.
 
 ## Configuring Claude Desktop
 

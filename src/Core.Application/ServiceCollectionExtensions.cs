@@ -1,4 +1,5 @@
 using System;
+using Core.Application.Models;
 using Core.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -19,18 +20,19 @@ namespace Core.Application
         /// <returns>The same service collection so that multiple calls can be chained</returns>
         public static IServiceCollection AddApplicationServices(
             this IServiceCollection services,
-            TimeZoneInfo defaultTimeZone,
+            TimeZoneId? defaultTimeZoneId,
             Func<DateTime>? currentDateTimeProvider = null)
         {
-            if (defaultTimeZone == null)
-                throw new ArgumentNullException(nameof(defaultTimeZone));
-
             // Make sure logging is registered
             services.AddLogging();
-            
-            services.AddSingleton(defaultTimeZone);
-            services.AddSingleton(currentDateTimeProvider ?? (() => DateTime.UtcNow));
-            services.AddScoped<ITimeService, TimeService>();
+            services.AddSingleton<ITimeService, TimeService>( sp =>
+            {
+                return new TimeService(
+                    sp.GetRequiredService<ILogger<TimeService>>(),
+                    defaultTimeZoneId,
+                    currentDateTimeProvider ?? (() => DateTime.UtcNow)
+                );
+            });
             
             return services;
         }
