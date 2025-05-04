@@ -58,7 +58,9 @@ jobs:
         docker logs test-container
         
         # Check logs for expected startup messages
-        if docker logs test-container 2>&1 | grep -q "Starting MCP Chronos Server"; then
+        if docker logs test-container 2>&1 | grep -q "Starting MCP Chronos Server" && \
+           docker logs test-container 2>&1 | grep -q "Server (stream) (Chronos) transport reading messages" && \
+           docker logs test-container 2>&1 | grep -q "Server (Chronos"; then
           echo "✅ Container started successfully with expected log messages"
         else
           echo "❌ Container did not show expected startup messages"
