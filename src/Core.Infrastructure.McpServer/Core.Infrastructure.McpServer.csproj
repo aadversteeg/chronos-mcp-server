@@ -16,7 +16,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.3" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
-    <PackageReference Include="ModelContextProtocol" Version="0.1.0-preview.11" />
+    <PackageReference Include="ModelContextProtocol" Version="0.1.0-preview.8" />
   </ItemGroup>
 
   <ItemGroup>
