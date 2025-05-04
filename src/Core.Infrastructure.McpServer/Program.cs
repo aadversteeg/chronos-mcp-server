@@ -1,4 +1,5 @@
-﻿using Core.Infrastructure.McpServer.Tools;
+﻿using Core.Application;
+using Core.Infrastructure.McpServer.Tools;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -54,11 +55,14 @@ namespace Core.Infrastructure.McpServer
 
             var defaultTimeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(defaultTimeZoneId);
 
-            // Register ChronosToolSettings with DI
-            builder.Services.AddSingleton(
-                new ChronosToolSettings() { 
-                    DefaultTimezoneInfo = defaultTimeZoneInfo
-                });
+            // Create and register ChronosToolSettings with DI
+            var toolSettings = new ChronosToolSettings() { 
+                DefaultTimezoneInfo = defaultTimeZoneInfo
+            };
+            builder.Services.AddSingleton(toolSettings);
+            
+            // Register Core.Application services (TimeService)
+            toolSettings.RegisterTimeService(builder.Services);
                 
             // Register MCP server and reference the ChronosTools
             builder.Services

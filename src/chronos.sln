@@ -6,6 +6,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Infrastructure.McpServ
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests.Infrastructure.McpServer", "UnitTests.Infrastructure.McpServer\UnitTests.Infrastructure.McpServer.csproj", "{FEBF9B1F-A3E5-4AA3-AC74-3CFD233D7FCE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Application", "Core.Application\Core.Application.csproj", "{72CF1E83-1FFE-45FB-AB25-E5D4B6EC0ACE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests.Application", "UnitTests.Application\UnitTests.Application.csproj", "{AFC6B24A-BBCC-4F63-A93A-DF9075CFD4D1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,5 +27,13 @@ Global
 		{FEBF9B1F-A3E5-4AA3-AC74-3CFD233D7FCE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FEBF9B1F-A3E5-4AA3-AC74-3CFD233D7FCE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FEBF9B1F-A3E5-4AA3-AC74-3CFD233D7FCE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72CF1E83-1FFE-45FB-AB25-E5D4B6EC0ACE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72CF1E83-1FFE-45FB-AB25-E5D4B6EC0ACE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72CF1E83-1FFE-45FB-AB25-E5D4B6EC0ACE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72CF1E83-1FFE-45FB-AB25-E5D4B6EC0ACE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFC6B24A-BBCC-4F63-A93A-DF9075CFD4D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFC6B24A-BBCC-4F63-A93A-DF9075CFD4D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFC6B24A-BBCC-4F63-A93A-DF9075CFD4D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFC6B24A-BBCC-4F63-A93A-DF9075CFD4D1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

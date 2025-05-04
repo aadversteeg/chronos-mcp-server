@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Core.Application.Services;
+using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
+using System;
 using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -13,8 +15,7 @@ namespace Core.Infrastructure.McpServer.Tools
     public class ChronosTools
     {
         private readonly ILogger<ChronosTools> _logger;
-        private readonly TimeZoneInfo _defaultTimezoneInfo;
-        private readonly Func<DateTime> _currentDateTimeProvider;
+        private readonly ITimeService _timeService;
 
         private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
         {
@@ -23,24 +24,14 @@ namespace Core.Infrastructure.McpServer.Tools
             Converters = { new JsonStringEnumConverter() }
         };
 
-        public ChronosTools(ILogger<ChronosTools> logger, ChronosToolSettings toolsSettings)
+        public ChronosTools(ILogger<ChronosTools> logger, ITimeService timeService)
         {
-            _logger = logger;
-
-            if(toolsSettings.DefaultTimezoneInfo == null)
-            {
-                throw new ArgumentNullException(nameof(ChronosToolSettings.DefaultTimezoneInfo), "Default timezone info cannot be null.");
-            }
-            _defaultTimezoneInfo = toolsSettings.DefaultTimezoneInfo;
-            _logger.LogInformation("ChronosTools initialized with timezone: {Timezone}", _defaultTimezoneInfo.Id);
-
-            if (toolsSettings.CurrentDateTimeProvider == null)
-            {
-                throw new ArgumentNullException(nameof(ChronosToolSettings.CurrentDateTimeProvider), "Current date time provider cannot be null.");
-            }
-            _currentDateTimeProvider = toolsSettings.CurrentDateTimeProvider;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _timeService = timeService ?? throw new ArgumentNullException(nameof(timeService));
+            
+            _logger.LogInformation("ChronosTools initialized with timezone: {Timezone}", 
+                _timeService.GetDefaultTimeZone().Id);
         }
-
 
         [McpServerTool(Name = "get_current_date_and_time"), Description("Gets the current date and time in the specified timezone or the default timezone.")]
         public string GetCurrentDateAndTime(
@@ -49,35 +40,26 @@ namespace Core.Infrastructure.McpServer.Tools
         {
             try
             {
-                TimeZoneInfo timezoneInfo = _defaultTimezoneInfo;
-                if (timezoneId != null)
-                {
-                    timezoneInfo = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
-                }
-                _logger.LogInformation("Getting current time for timezone: {Timezone}", timezoneInfo.Id);
-
-                // Get the current date and time
-                var currentDateTime = _currentDateTimeProvider();
-
-                // Get the current time in the specified timezone
-                var currentDateTimeInTimezone = TimeZoneInfo.ConvertTime(currentDateTime, timezoneInfo);
+                var (currentDateTimeInTimezone, timezoneIdToUse) = _timeService.GetCurrentTimeWithTimezone(timezoneId);
+                
+                _logger.LogInformation("Returning current time for timezone: {Timezone}", timezoneIdToUse);
 
                 // Create structured response
                 var response = new
                 {
                     Date = currentDateTimeInTimezone.ToString("yyyy-MM-dd"),
                     Time = currentDateTimeInTimezone.ToString("HH:mm:ss"),
-                    Timezone = timezoneInfo.Id,
+                    Timezone = timezoneIdToUse,
                 };
 
                 return JsonSerializer.Serialize(response, JsonOptions);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error getting current date and time");
                 return JsonSerializer.Serialize(new { Error = ex.Message }, JsonOptions);
             }
         }
-
 
         [McpServerTool(Name = "get_default_timezone_id"), Description("Gets the default timezone identifier. Used to determine the current time when no timezone id is specified.")]
         public string GetDefaultTimeZoneId()
@@ -85,7 +67,7 @@ namespace Core.Infrastructure.McpServer.Tools
             try
             {
                 _logger.LogInformation("Getting default time zone information");
-                return _defaultTimezoneInfo.Id;
+                return _timeService.GetDefaultTimeZone().Id;
             }
             catch (Exception ex)
             {
