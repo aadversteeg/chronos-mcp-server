@@ -108,28 +108,28 @@ namespace UnitTests.Infrastructure.McpServer.Tools
         }
 
         [Fact(DisplayName = "CT-003: GetCurrentDateAndTime returns correct data with default timezone")]
-        public void CT003()
+        public async Task CT003()
         {
             // Arrange
             var chronosTools = new ChronosTools(_loggerMock.Object, _timeServiceMock.Object);
-            
+
             // Setup specific expectations for this test
             var expectedDateTime = TimeZoneInfo.ConvertTime(_fixedDateTime, _defaultTimezoneInfo);
-            
+
             // Act
-            var result = chronosTools.GetCurrentDateAndTime();
+            var result = await chronosTools.GetCurrentDateAndTime();
             var response = JsonSerializer.Deserialize<DateTimeResponse>(result, _jsonOptions);
 
             // Assert
             response.Should().NotBeNull();
             response!.Timezone.Should().Be(_defaultTimezoneInfo.Id);
-            
+
             // Use the GetCurrentTimeWithTimezone method
             _timeServiceMock.Verify(s => s.GetCurrentTimeWithTimezone(It.IsAny<TimeZoneId?>()), Times.Once);
         }
 
         [Fact(DisplayName = "CT-004: GetCurrentDateAndTime returns correct data with custom timezone")]
-        public void CT004()
+        public async Task CT004()
         {
             // Skip if running in environment without America/New_York timezone
             var availableTimezones = TimeZoneInfo.GetSystemTimeZones();
@@ -139,59 +139,59 @@ namespace UnitTests.Infrastructure.McpServer.Tools
             }
 
             // Arrange
-            var tzId = availableTimezones.Any(tz => tz.Id == "America/New_York") 
-                ? "America/New_York" 
+            var tzId = availableTimezones.Any(tz => tz.Id == "America/New_York")
+                ? "America/New_York"
                 : "Eastern Standard Time"; // Windows equivalent
-                
+
             var chronosTools = new ChronosTools(_loggerMock.Object, _timeServiceMock.Object);
 
             // Act
-            var result = chronosTools.GetCurrentDateAndTime(tzId);
+            var result = await chronosTools.GetCurrentDateAndTime(tzId);
             var response = JsonSerializer.Deserialize<DateTimeResponse>(result, _jsonOptions);
 
             // Assert
             response.Should().NotBeNull();
             response!.Timezone.Should().Be(tzId);
-            
+
             // Since we're using a string parameter, the ChronosTools should convert it to a TimeZoneId
             // and then pass it to the TimeService
-            _timeServiceMock.Verify(s => s.GetCurrentTimeWithTimezone(It.Is<TimeZoneId?>(t => 
+            _timeServiceMock.Verify(s => s.GetCurrentTimeWithTimezone(It.Is<TimeZoneId?>(t =>
                 t != null)), Times.Once);
-            
+
             // Additionally verify that the timezone value inside the parameter matches what's expected
             response.Timezone.Should().Be(tzId);
         }
 
         [Fact(DisplayName = "CT-005: GetCurrentDateAndTime throws for invalid timezone")]
-        public void CT005()
+        public async Task CT005()
         {
             // Arrange
             var invalidTimezoneId = "Invalid_Timezone";
-            
+
             // Setup TimeZoneId.Create to return failure for this case
             // The error will happen in ChronosTools before even calling the service
-            
+
             var chronosTools = new ChronosTools(_loggerMock.Object, _timeServiceMock.Object);
 
             // Setup the mock to return failure for the TimeZoneId.Create call
-            
+
             // Act & Assert
-            Action act = () => chronosTools.GetCurrentDateAndTime(invalidTimezoneId);
-            act.Should().Throw<McpException>();
+            Func<Task> act = async () => await chronosTools.GetCurrentDateAndTime(invalidTimezoneId);
+            await act.Should().ThrowAsync<McpException>();
             // No specific message check since the implementation has changed to use functional extensions
-            
+
             // Verify the TimeService was never called since validation fails early
             _timeServiceMock.Verify(s => s.GetCurrentTimeWithTimezone(It.IsAny<TimeZoneId?>()), Times.Never);
         }
 
         [Fact(DisplayName = "CT-006: GetDefaultTimeZoneId returns correct timezone ID")]
-        public void CT006()
+        public async Task CT006()
         {
             // Arrange
             var chronosTools = new ChronosTools(_loggerMock.Object, _timeServiceMock.Object);
 
             // Act
-            var result = chronosTools.GetDefaultTimeZoneId();
+            var result = await chronosTools.GetDefaultTimeZoneId();
 
             // Assert
             // Remove double quotes from the result if present
@@ -201,19 +201,19 @@ namespace UnitTests.Infrastructure.McpServer.Tools
         }
 
         [Fact(DisplayName = "CT-007: GetDefaultTimeZoneId throws McpException when error occurs")]
-        public void CT007()
+        public async Task CT007()
         {
             // Arrange
             var chronosTools = new ChronosTools(_loggerMock.Object, _timeServiceMock.Object);
-            
+
             // Setup to return failure after constructor has completed
             _timeServiceMock.Setup(s => s.GetDefaultTimeZone())
                 .Returns(Result<TimeZoneInfo, Error>.Failure(
                     new Error("Test exception", "TestError")));
 
             // Act & Assert
-            Action act = () => chronosTools.GetDefaultTimeZoneId();
-            act.Should().Throw<McpException>();
+            Func<Task> act = async () => await chronosTools.GetDefaultTimeZoneId();
+            await act.Should().ThrowAsync<McpException>();
             // No specific message check since the implementation has changed to use functional extensions
         }
 

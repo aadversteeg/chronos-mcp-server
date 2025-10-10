@@ -47,24 +47,32 @@ namespace Core.Infrastructure.McpServer.Tools
         /// Gets the current date and time in the specified timezone or the default timezone.
         /// </summary>
         /// <param name="timezoneId">Optional timezone identifier (e.g., 'America/New_York'). If not specified, the default timezone id will be used.</param>
+        /// <param name="cancellationToken">Optional cancellation token to cancel the operation.</param>
         /// <returns>JSON string containing date, time, and timezone information.</returns>
         /// <exception cref="McpException">Thrown when an error occurs during processing.</exception>
-        [McpServerTool(Name = "get_current_date_and_time"), Description("Gets the current date and time in the specified timezone or the default timezone.")]
-        public string GetCurrentDateAndTime(
-            [Description("Optional: the timezone identifier (e.g., 'America/New_York', 'Eastern Standard Time'). If not specified, the default timezone id will be used.")] 
-            string? timezoneId = null)
+        [McpServerTool(Name = "get_current_date_and_time", ReadOnly = true, OpenWorld = false), Description("Gets the current date and time in the specified timezone or the default timezone.")]
+        public async Task<string> GetCurrentDateAndTime(
+            [Description("Optional: the timezone identifier (e.g., 'America/New_York', 'Eastern Standard Time'). If not specified, the default timezone id will be used.")]
+            string? timezoneId = null,
+            CancellationToken cancellationToken = default)
         {
             try
             {
+                _logger.LogInformation("Getting current date and time for timezone: {TimezoneId}", timezoneId ?? "(default)");
+                cancellationToken.ThrowIfCancellationRequested();
+
                 // Convert the string to TimeZoneId, handle null, and get current time
-                return timezoneId
+                var result = timezoneId
                     .Bind(TimeZoneId.Create) // Convert string to Result<TimeZoneId, Error>
                     .OnSuccessBind(_timeService.GetCurrentTimeWithTimezone) // Get current time with timezone
-                    .ToToolResult(result => new { 
+                    .ToToolResult(result => new {
                         Date = result.CurrentDateTime.ToString("yyyy-MM-dd"),
                         Time = result.CurrentDateTime.ToString("HH:mm:ss"),
                         Timezone = result.UsedTimezoneId.Value
                     });
+
+                await Task.CompletedTask;
+                return result;
             }
             catch (McpException)
             {
@@ -80,18 +88,23 @@ namespace Core.Infrastructure.McpServer.Tools
         /// <summary>
         /// Gets the default timezone identifier used when no timezone is specified.
         /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token to cancel the operation.</param>
         /// <returns>JSON string containing the default timezone identifier.</returns>
         /// <exception cref="McpException">Thrown when an error occurs during processing.</exception>
-        [McpServerTool(Name = "get_default_timezone_id"), Description("Gets the default timezone identifier. Used to determine the current time when no timezone id is specified.")]
-        public string GetDefaultTimeZoneId()
+        [McpServerTool(Name = "get_default_timezone_id", ReadOnly = true, OpenWorld = false), Description("Gets the default timezone identifier. Used to determine the current time when no timezone id is specified.")]
+        public async Task<string> GetDefaultTimeZoneId(CancellationToken cancellationToken = default)
         {
             try
             {
                 _logger.LogInformation("Getting default time zone information");
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // Get the default timezone and return its ID
-                return _timeService.GetDefaultTimeZone()
+                var result = _timeService.GetDefaultTimeZone()
                     .ToToolResult(timeZone => timeZone.Id);
+
+                await Task.CompletedTask;
+                return result;
             }
             catch (McpException)
             {
