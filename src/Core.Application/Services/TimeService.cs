@@ -37,7 +37,7 @@ namespace Core.Application.Services
         {
             if (_defaultTimeZoneId == null)
             {
-                return Result<TimeZoneInfo, Error>.Failure(Errors.NoDefaultTimeZoneId);
+                return Result<TimeZoneInfo, Error>.Failure(ProtocolErrors.NoDefaultTimeZoneId);
             }
 
             var timeZoneInfo = TimeZoneInfo
@@ -51,7 +51,7 @@ namespace Core.Application.Services
         public Result<DateTimeWithTimeZoneId, Error> GetCurrentTimeWithTimezone(TimeZoneId? maybeTimeZoneId)
         {
             return maybeTimeZoneId
-                .Ensure(_defaultTimeZoneId, Errors.NoDefaultTimeZoneId)
+                .Ensure(_defaultTimeZoneId, ProtocolErrors.NoDefaultTimeZoneId)
                 .OnSuccessMap(timeZoneId =>
                 {
                     var timeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId.Value);

@@ -5,6 +5,7 @@ using Core.Application.Extensions;
 using Core.Infrastructure.McpServer.Extensions;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 
@@ -48,10 +49,10 @@ namespace Core.Infrastructure.McpServer.Tools
         /// </summary>
         /// <param name="timezoneId">Optional timezone identifier (e.g., 'America/New_York'). If not specified, the default timezone id will be used.</param>
         /// <param name="cancellationToken">Optional cancellation token to cancel the operation.</param>
-        /// <returns>JSON string containing date, time, and timezone information.</returns>
+        /// <returns>CallToolResult containing date, time, and timezone information.</returns>
         /// <exception cref="McpException">Thrown when an error occurs during processing.</exception>
         [McpServerTool(Name = "get_current_date_and_time", ReadOnly = true, OpenWorld = false), Description("Gets the current date and time in the specified timezone or the default timezone.")]
-        public async Task<string> GetCurrentDateAndTime(
+        public async Task<CallToolResult> GetCurrentDateAndTime(
             [Description("Optional: the timezone identifier (e.g., 'America/New_York', 'Eastern Standard Time'). If not specified, the default timezone id will be used.")]
             string? timezoneId = null,
             CancellationToken cancellationToken = default)
@@ -65,7 +66,7 @@ namespace Core.Infrastructure.McpServer.Tools
                 var result = timezoneId
                     .Bind(TimeZoneId.Create) // Convert string to Result<TimeZoneId, Error>
                     .OnSuccessBind(_timeService.GetCurrentTimeWithTimezone) // Get current time with timezone
-                    .ToToolResult(result => new {
+                    .ToCallToolResult(result => new {
                         Date = result.CurrentDateTime.ToString("yyyy-MM-dd"),
                         Time = result.CurrentDateTime.ToString("HH:mm:ss"),
                         Timezone = result.UsedTimezoneId.Value
@@ -89,10 +90,10 @@ namespace Core.Infrastructure.McpServer.Tools
         /// Gets the default timezone identifier used when no timezone is specified.
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token to cancel the operation.</param>
-        /// <returns>JSON string containing the default timezone identifier.</returns>
+        /// <returns>CallToolResult containing the default timezone identifier.</returns>
         /// <exception cref="McpException">Thrown when an error occurs during processing.</exception>
         [McpServerTool(Name = "get_default_timezone_id", ReadOnly = true, OpenWorld = false), Description("Gets the default timezone identifier. Used to determine the current time when no timezone id is specified.")]
-        public async Task<string> GetDefaultTimeZoneId(CancellationToken cancellationToken = default)
+        public async Task<CallToolResult> GetDefaultTimeZoneId(CancellationToken cancellationToken = default)
         {
             try
             {
@@ -101,7 +102,7 @@ namespace Core.Infrastructure.McpServer.Tools
 
                 // Get the default timezone and return its ID
                 var result = _timeService.GetDefaultTimeZone()
-                    .ToToolResult(timeZone => timeZone.Id);
+                    .ToCallToolResult(timeZone => timeZone.Id);
 
                 await Task.CompletedTask;
                 return result;

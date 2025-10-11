@@ -16,12 +16,12 @@ namespace Core.Application.Models
         {
             if (string.IsNullOrWhiteSpace(id))
             {
-                return Result<TimeZoneId, Error>.Failure( Errors.NullValueForTimeZoneIdValue);
+                return Result<TimeZoneId, Error>.Failure(ProtocolErrors.NullValueForTimeZoneIdValue);
             }
 
             if (!TimeZoneInfo.TryFindSystemTimeZoneById(id, out var timeZone))
             {
-                return Result<TimeZoneId, Error>.Failure(Errors.InvalidTimeZoneIdValue(id));
+                return Result<TimeZoneId, Error>.Failure(ProtocolErrors.InvalidTimeZoneIdValue(id));
             }
 
             return Result<TimeZoneId, Error>.Success(new TimeZoneId(id));

@@ -28,7 +28,7 @@ namespace UnitTests.Application.Extensions
         {
             // Arrange
             var errorMessage = "Test error message";
-            var failureResult = Result<string, Error>.Failure(new Error(errorMessage, "ErrorCode"));
+            var failureResult = Result<string, Error>.Failure(new ProtocolError(errorMessage, "ErrorCode"));
             
             // Act & Assert
             Action act = () => failureResult.Unwrap();
@@ -42,7 +42,7 @@ namespace UnitTests.Application.Extensions
             // Arrange
             var originalErrorMessage = "Original error message";
             var customErrorMessage = "Custom error message";
-            var failureResult = Result<string, Error>.Failure(new Error(originalErrorMessage, "ErrorCode"));
+            var failureResult = Result<string, Error>.Failure(new ProtocolError(originalErrorMessage, "ErrorCode"));
             
             // Act & Assert
             Action act = () => failureResult.Unwrap(customErrorMessage);

@@ -77,7 +77,7 @@ namespace UnitTests.Infrastructure.McpServer.Tools
                         catch (TimeZoneNotFoundException)
                         {
                             return Result<DateTimeWithTimeZoneId, Error>.Failure(
-                                new Error($"Timezone ID '{tz.Value}' was not found", "TimeZoneNotFound"));
+                                new ProtocolError($"Timezone ID '{tz.Value}' was not found", "TimeZoneNotFound"));
                         }
                     }
                 });
@@ -117,8 +117,10 @@ namespace UnitTests.Infrastructure.McpServer.Tools
             var expectedDateTime = TimeZoneInfo.ConvertTime(_fixedDateTime, _defaultTimezoneInfo);
 
             // Act
-            var result = await chronosTools.GetCurrentDateAndTime();
-            var response = JsonSerializer.Deserialize<DateTimeResponse>(result, _jsonOptions);
+            var callResult = await chronosTools.GetCurrentDateAndTime();
+            var textContent = callResult.Content.OfType<ModelContextProtocol.Protocol.TextContentBlock>().FirstOrDefault()?.Text;
+            textContent.Should().NotBeNull();
+            var response = JsonSerializer.Deserialize<DateTimeResponse>(textContent!, _jsonOptions);
 
             // Assert
             response.Should().NotBeNull();
@@ -146,8 +148,10 @@ namespace UnitTests.Infrastructure.McpServer.Tools
             var chronosTools = new ChronosTools(_loggerMock.Object, _timeServiceMock.Object);
 
             // Act
-            var result = await chronosTools.GetCurrentDateAndTime(tzId);
-            var response = JsonSerializer.Deserialize<DateTimeResponse>(result, _jsonOptions);
+            var callResult = await chronosTools.GetCurrentDateAndTime(tzId);
+            var textContent = callResult.Content.OfType<ModelContextProtocol.Protocol.TextContentBlock>().FirstOrDefault()?.Text;
+            textContent.Should().NotBeNull();
+            var response = JsonSerializer.Deserialize<DateTimeResponse>(textContent!, _jsonOptions);
 
             // Assert
             response.Should().NotBeNull();
@@ -191,11 +195,13 @@ namespace UnitTests.Infrastructure.McpServer.Tools
             var chronosTools = new ChronosTools(_loggerMock.Object, _timeServiceMock.Object);
 
             // Act
-            var result = await chronosTools.GetDefaultTimeZoneId();
+            var callResult = await chronosTools.GetDefaultTimeZoneId();
+            var textContent = callResult.Content.OfType<ModelContextProtocol.Protocol.TextContentBlock>().FirstOrDefault()?.Text;
+            textContent.Should().NotBeNull();
 
             // Assert
             // Remove double quotes from the result if present
-            var cleanResult = result.Trim('"');
+            var cleanResult = textContent!.Trim('"');
             cleanResult.Should().Be(_defaultTimezoneInfo.Id);
             _timeServiceMock.Verify(s => s.GetDefaultTimeZone(), Times.AtLeastOnce);
         }
@@ -209,7 +215,7 @@ namespace UnitTests.Infrastructure.McpServer.Tools
             // Setup to return failure after constructor has completed
             _timeServiceMock.Setup(s => s.GetDefaultTimeZone())
                 .Returns(Result<TimeZoneInfo, Error>.Failure(
-                    new Error("Test exception", "TestError")));
+                    new ProtocolError("Test exception", "TestError")));
 
             // Act & Assert
             Func<Task> act = async () => await chronosTools.GetDefaultTimeZoneId();

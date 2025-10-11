@@ -21,7 +21,7 @@ namespace UnitTests.Application.Extensions
                 {
                     return Result<int, Error>.Success(value);
                 }
-                return Result<int, Error>.Failure(new Error("Failed to parse", "ParseError"));
+                return Result<int, Error>.Failure(new ProtocolError("Failed to parse", "ParseError"));
             };
             
             // Act
@@ -36,7 +36,7 @@ namespace UnitTests.Application.Extensions
         {
             // Arrange
             string? input = "not a number";
-            var error = new Error("Failed to parse", "ParseError");
+            var error = new ProtocolError("Failed to parse", "ParseError");
             Func<string, Result<int, Error>> parseFunc = str => 
             {
                 if (int.TryParse(str, out int value))
@@ -59,7 +59,7 @@ namespace UnitTests.Application.Extensions
             // Arrange
             string? nullString = null;
             string defaultValue = "default";
-            var error = new Error("Test error", "TestError");
+            var error = new ProtocolError("Test error", "TestError");
             
             // Act
             var result = nullString.Ensure(defaultValue, error);
@@ -74,7 +74,7 @@ namespace UnitTests.Application.Extensions
             // Arrange
             string? nullString = null;
             string? defaultValue = null;
-            var error = new Error("Test error", "TestError");
+            var error = new ProtocolError("Test error", "TestError");
             
             // Act
             var result = nullString.Ensure(defaultValue, error);
@@ -89,7 +89,7 @@ namespace UnitTests.Application.Extensions
             // Arrange
             string nonNullString = "test";
             string defaultValue = "default";
-            var error = new Error("Test error", "TestError");
+            var error = new ProtocolError("Test error", "TestError");
             
             // Act
             var result = nonNullString.Ensure(defaultValue, error);
@@ -104,7 +104,7 @@ namespace UnitTests.Application.Extensions
             // Arrange
             int? nullInt = null;
             int defaultValue = 42;
-            var error = new Error("Test error", "TestError");
+            var error = new ProtocolError("Test error", "TestError");
             
             // Act
             var result = nullInt.Ensure(defaultValue, error);
@@ -119,7 +119,7 @@ namespace UnitTests.Application.Extensions
             // Arrange
             int? nonNullInt = 10;
             int defaultValue = 42;
-            var error = new Error("Test error", "TestError");
+            var error = new ProtocolError("Test error", "TestError");
             
             // Act
             var result = nonNullInt.Ensure(defaultValue, error);
@@ -133,7 +133,7 @@ namespace UnitTests.Application.Extensions
         {
             // Arrange
             string? source = null;
-            var error = new Error("Test error", "TestError");
+            var error = new ProtocolError("Test error", "TestError");
 
             // Act
             var result = source.Ensure(error);
@@ -147,7 +147,7 @@ namespace UnitTests.Application.Extensions
         {
             // Arrange
             string source = "test data";
-            var error = new Error("Test error", "TestError");
+            var error = new ProtocolError("Test error", "TestError");
 
             // Act
             var result = source.Ensure(error);
@@ -162,7 +162,7 @@ namespace UnitTests.Application.Extensions
         {
             // Arrange
             int? source = null;
-            var error = new Error("Test error", "TestError");
+            var error = new ProtocolError("Test error", "TestError");
 
             // Act
             var result = source.Ensure(error);
@@ -177,7 +177,7 @@ namespace UnitTests.Application.Extensions
         {
             // Arrange
             int? source = 42;
-            var error = new Error("Test error", "TestError");
+            var error = new ProtocolError("Test error", "TestError");
 
             // Act
             var result = source.Ensure(error);
@@ -194,11 +194,11 @@ namespace UnitTests.Application.Extensions
             TimeZoneId? source = null;
             
             // Act
-            var result = source.Ensure(Errors.NoDefaultTimeZoneId);
+            var result = source.Ensure(ProtocolErrors.NoDefaultTimeZoneId);
 
             // Assert
             result.IsFailure.Should().BeTrue("Null TimeZoneId should result in failure");
-            result.Error.Should().Be(Errors.NoDefaultTimeZoneId);
+            result.Error.Should().Be(ProtocolErrors.NoDefaultTimeZoneId);
         }
 
         [Fact(DisplayName = "NE-013: Ensure with TimeZoneId works correctly for non-null value")]
@@ -212,7 +212,7 @@ namespace UnitTests.Application.Extensions
             TimeZoneId source = createResult.Value;
             
             // Act
-            var result = source.Ensure(Errors.NoDefaultTimeZoneId);
+            var result = source.Ensure(ProtocolErrors.NoDefaultTimeZoneId);
 
             // Assert
             result.IsSuccess.Should().BeTrue("Non-null TimeZoneId should result in success");
