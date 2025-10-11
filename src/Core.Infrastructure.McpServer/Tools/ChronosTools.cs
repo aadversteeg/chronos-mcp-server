@@ -57,33 +57,21 @@ namespace Core.Infrastructure.McpServer.Tools
             string? timezoneId = null,
             CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _logger.LogInformation("Getting current date and time for timezone: {TimezoneId}", timezoneId ?? "(default)");
-                cancellationToken.ThrowIfCancellationRequested();
+            _logger.LogInformation("Getting current date and time for timezone: {TimezoneId}", timezoneId ?? "(default)");
+            cancellationToken.ThrowIfCancellationRequested();
 
-                // Convert the string to TimeZoneId, handle null, and get current time
-                var result = timezoneId
-                    .Bind(TimeZoneId.Create) // Convert string to Result<TimeZoneId, Error>
-                    .OnSuccessBind(_timeService.GetCurrentTimeWithTimezone) // Get current time with timezone
-                    .ToCallToolResult(result => new {
-                        Date = result.CurrentDateTime.ToString("yyyy-MM-dd"),
-                        Time = result.CurrentDateTime.ToString("HH:mm:ss"),
-                        Timezone = result.UsedTimezoneId.Value
-                    });
+            // Convert the string to TimeZoneId, handle null, and get current time
+            var result = timezoneId
+                .Bind(TimeZoneId.Create) // Convert string to Result<TimeZoneId, Error>
+                .OnSuccessBind(_timeService.GetCurrentTimeWithTimezone) // Get current time with timezone
+                .ToCallToolResult(result => new {
+                    Date = result.CurrentDateTime.ToString("yyyy-MM-dd"),
+                    Time = result.CurrentDateTime.ToString("HH:mm:ss"),
+                    Timezone = result.UsedTimezoneId.Value
+                });
 
-                await Task.CompletedTask;
-                return result;
-            }
-            catch (McpException)
-            {
-                throw; // Re-throw McpException without wrapping
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting current date and time");
-                throw new McpException("Error getting current date and time", ex);
-            }
+            await Task.CompletedTask;
+            return result;
         }
 
         /// <summary>
@@ -95,27 +83,15 @@ namespace Core.Infrastructure.McpServer.Tools
         [McpServerTool(Name = "get_default_timezone_id", ReadOnly = true, OpenWorld = false), Description("Gets the default timezone identifier. Used to determine the current time when no timezone id is specified.")]
         public async Task<CallToolResult> GetDefaultTimeZoneId(CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _logger.LogInformation("Getting default time zone information");
-                cancellationToken.ThrowIfCancellationRequested();
+            _logger.LogInformation("Getting default time zone information");
+            cancellationToken.ThrowIfCancellationRequested();
 
-                // Get the default timezone and return its ID
-                var result = _timeService.GetDefaultTimeZone()
-                    .ToCallToolResult(timeZone => timeZone.Id);
+            // Get the default timezone and return its ID
+            var result = _timeService.GetDefaultTimeZone()
+                .ToCallToolResult(timeZone => timeZone.Id);
 
-                await Task.CompletedTask;
-                return result;
-            }
-            catch (McpException)
-            {
-                throw; // Re-throw McpException without wrapping
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting default time zone information");
-                throw new McpException("Error getting default time zone information", ex);
-            }
+            await Task.CompletedTask;
+            return result;
         }
     }
 }

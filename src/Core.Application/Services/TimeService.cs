@@ -40,11 +40,24 @@ namespace Core.Application.Services
                 return Result<TimeZoneInfo, Error>.Failure(ProtocolErrors.NoDefaultTimeZoneId);
             }
 
-            var timeZoneInfo = TimeZoneInfo
-                .FindSystemTimeZoneById(_defaultTimeZoneId.Value);
+            try
+            {
+                var timeZoneInfo = TimeZoneInfo
+                    .FindSystemTimeZoneById(_defaultTimeZoneId.Value);
 
-            return Result<TimeZoneInfo, Error>
-                .Success(timeZoneInfo);
+                return Result<TimeZoneInfo, Error>.Success(timeZoneInfo);
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                _logger.LogError("Default timezone '{TimezoneId}' was not found", _defaultTimeZoneId.Value);
+                return Result<TimeZoneInfo, Error>.Failure(ToolErrors.TimeZoneNotFound(_defaultTimeZoneId.Value));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get default timezone '{TimezoneId}'", _defaultTimeZoneId.Value);
+                return Result<TimeZoneInfo, Error>.Failure(
+                    ToolErrors.TimeZoneConversionFailed(_defaultTimeZoneId.Value, ex.Message));
+            }
         }
 
         /// <inheritdoc />
@@ -52,15 +65,30 @@ namespace Core.Application.Services
         {
             return maybeTimeZoneId
                 .Ensure(_defaultTimeZoneId, ProtocolErrors.NoDefaultTimeZoneId)
-                .OnSuccessMap(timeZoneId =>
+                .OnSuccessBind(timeZoneId =>
                 {
-                    var timeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId.Value);
-                    var currentDateTime = TimeZoneInfo.ConvertTime(
-                        _currentDateTimeProvider(),
-                        timeZone);
+                    try
+                    {
+                        var timeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId.Value);
+                        var currentDateTime = TimeZoneInfo.ConvertTime(
+                            _currentDateTimeProvider(),
+                            timeZone);
 
-                    return new DateTimeWithTimeZoneId(currentDateTime, timeZoneId);
-
+                        return Result<DateTimeWithTimeZoneId, Error>.Success(
+                            new DateTimeWithTimeZoneId(currentDateTime, timeZoneId));
+                    }
+                    catch (TimeZoneNotFoundException)
+                    {
+                        _logger.LogError("Timezone '{TimezoneId}' was not found", timeZoneId.Value);
+                        return Result<DateTimeWithTimeZoneId, Error>.Failure(
+                            ToolErrors.TimeZoneNotFound(timeZoneId.Value));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to convert time for timezone '{TimezoneId}'", timeZoneId.Value);
+                        return Result<DateTimeWithTimeZoneId, Error>.Failure(
+                            ToolErrors.TimeZoneConversionFailed(timeZoneId.Value, ex.Message));
+                    }
                 });
         }
     }
