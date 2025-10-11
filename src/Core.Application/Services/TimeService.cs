@@ -81,17 +81,24 @@ namespace Core.Application.Services
         /// </summary>
         private Result<DateTimeWithTimeZoneId, Error> ConvertTimeToTimeZone(TimeZoneInfo timeZone)
         {
+            var currentDateTime = _currentDateTimeProvider();
+            return ConvertDateTimeToTimeZone(currentDateTime, timeZone);
+        }
+
+        /// <summary>
+        /// Converts a DateTime to the specified timezone with proper error handling.
+        /// </summary>
+        private Result<DateTimeWithTimeZoneId, Error> ConvertDateTimeToTimeZone(DateTime dateTime, TimeZoneInfo timeZone)
+        {
             try
             {
-                var currentDateTime = TimeZoneInfo.ConvertTime(
-                    _currentDateTimeProvider(),
-                    timeZone);
+                var convertedDateTime = TimeZoneInfo.ConvertTime(dateTime, timeZone);
 
                 // TimeZoneInfo.Id is guaranteed to be valid since we successfully loaded it
                 var timeZoneId = new TimeZoneId(timeZone.Id);
 
                 return Result<DateTimeWithTimeZoneId, Error>.Success(
-                    new DateTimeWithTimeZoneId(currentDateTime, timeZoneId));
+                    new DateTimeWithTimeZoneId(convertedDateTime, timeZoneId));
             }
             catch (ArgumentException ex)
             {
