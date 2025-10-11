@@ -90,15 +90,10 @@ namespace Core.Application.Services
         /// </summary>
         private Result<DateTimeWithTimeZoneId, Error> ConvertDateTimeToTimeZone(DateTime dateTime, TimeZoneInfo timeZone)
         {
+            DateTime convertedDateTime;
             try
             {
-                var convertedDateTime = TimeZoneInfo.ConvertTime(dateTime, timeZone);
-
-                // TimeZoneInfo.Id is guaranteed to be valid since we successfully loaded it
-                var timeZoneId = new TimeZoneId(timeZone.Id);
-
-                return Result<DateTimeWithTimeZoneId, Error>.Success(
-                    new DateTimeWithTimeZoneId(convertedDateTime, timeZoneId));
+                convertedDateTime = TimeZoneInfo.ConvertTime(dateTime, timeZone);
             }
             catch (ArgumentException ex)
             {
@@ -106,6 +101,12 @@ namespace Core.Application.Services
                 return Result<DateTimeWithTimeZoneId, Error>.Failure(
                     ToolErrors.TimeZoneConversionFailed(timeZone.Id, ex.Message));
             }
+
+            // TimeZoneInfo.Id is guaranteed to be valid since we successfully loaded it
+            var timeZoneId = new TimeZoneId(timeZone.Id);
+
+            return Result<DateTimeWithTimeZoneId, Error>.Success(
+                new DateTimeWithTimeZoneId(convertedDateTime, timeZoneId));
         }
     }
 }
