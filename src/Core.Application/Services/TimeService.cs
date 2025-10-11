@@ -50,7 +50,7 @@ namespace Core.Application.Services
                 .Ensure(_defaultTimeZoneId, ProtocolErrors.NoDefaultTimeZoneId)
                 .OnSuccessBind(timeZoneId =>
                     GetTimeZoneInfoById(timeZoneId.Value)
-                        .OnSuccessBind(timeZone => ConvertTimeToTimeZone(timeZone, timeZoneId)));
+                        .OnSuccessBind(ConvertTimeToTimeZone));
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace Core.Application.Services
         /// <summary>
         /// Converts current time to the specified timezone with proper error handling.
         /// </summary>
-        private Result<DateTimeWithTimeZoneId, Error> ConvertTimeToTimeZone(TimeZoneInfo timeZone, TimeZoneId timeZoneId)
+        private Result<DateTimeWithTimeZoneId, Error> ConvertTimeToTimeZone(TimeZoneInfo timeZone)
         {
             try
             {
@@ -87,14 +87,17 @@ namespace Core.Application.Services
                     _currentDateTimeProvider(),
                     timeZone);
 
+                // TimeZoneInfo.Id is guaranteed to be valid since we successfully loaded it
+                var timeZoneId = new TimeZoneId(timeZone.Id);
+
                 return Result<DateTimeWithTimeZoneId, Error>.Success(
                     new DateTimeWithTimeZoneId(currentDateTime, timeZoneId));
             }
             catch (ArgumentException ex)
             {
-                _logger.LogError(ex, "Failed to convert time for timezone '{TimezoneId}'", timeZoneId.Value);
+                _logger.LogError(ex, "Failed to convert time for timezone '{TimezoneId}'", timeZone.Id);
                 return Result<DateTimeWithTimeZoneId, Error>.Failure(
-                    ToolErrors.TimeZoneConversionFailed(timeZoneId.Value, ex.Message));
+                    ToolErrors.TimeZoneConversionFailed(timeZone.Id, ex.Message));
             }
         }
     }

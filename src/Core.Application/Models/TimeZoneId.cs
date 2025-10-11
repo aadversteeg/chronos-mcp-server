@@ -7,7 +7,7 @@ namespace Core.Application.Models
     {
         public string Value { get; }
 
-        private TimeZoneId(string value)
+        internal TimeZoneId(string value)
         {
             Value = value;
         }
