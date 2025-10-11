@@ -52,6 +52,12 @@ namespace Core.Application.Services
                 _logger.LogError("Default timezone '{TimezoneId}' was not found", _defaultTimeZoneId.Value);
                 return Result<TimeZoneInfo, Error>.Failure(ToolErrors.TimeZoneNotFound(_defaultTimeZoneId.Value));
             }
+            catch (InvalidTimeZoneException ex)
+            {
+                _logger.LogError(ex, "Default timezone '{TimezoneId}' has corrupted data", _defaultTimeZoneId.Value);
+                return Result<TimeZoneInfo, Error>.Failure(
+                    ToolErrors.InvalidTimeZoneData(_defaultTimeZoneId.Value, ex.Message));
+            }
         }
 
         /// <inheritdoc />
@@ -76,6 +82,18 @@ namespace Core.Application.Services
                         _logger.LogError("Timezone '{TimezoneId}' was not found", timeZoneId.Value);
                         return Result<DateTimeWithTimeZoneId, Error>.Failure(
                             ToolErrors.TimeZoneNotFound(timeZoneId.Value));
+                    }
+                    catch (InvalidTimeZoneException ex)
+                    {
+                        _logger.LogError(ex, "Timezone '{TimezoneId}' has corrupted data", timeZoneId.Value);
+                        return Result<DateTimeWithTimeZoneId, Error>.Failure(
+                            ToolErrors.InvalidTimeZoneData(timeZoneId.Value, ex.Message));
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        _logger.LogError(ex, "Failed to convert time for timezone '{TimezoneId}'", timeZoneId.Value);
+                        return Result<DateTimeWithTimeZoneId, Error>.Failure(
+                            ToolErrors.TimeZoneConversionFailed(timeZoneId.Value, ex.Message));
                     }
                 });
         }

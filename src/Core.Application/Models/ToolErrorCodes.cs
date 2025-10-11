@@ -7,6 +7,7 @@ namespace Core.Application.Models
     {
         // TimeZone operational errors
         public const string TimeZoneNotFound = "TimeZoneNotFound";
+        public const string InvalidTimeZoneData = "InvalidTimeZoneData";
         public const string TimeZoneConversionFailed = "TimeZoneConversionFailed";
     }
 }

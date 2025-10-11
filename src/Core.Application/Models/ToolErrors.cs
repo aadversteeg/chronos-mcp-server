@@ -12,6 +12,15 @@ namespace Core.Application.Models
                 ToolErrorCodes.TimeZoneNotFound,
                 new Dictionary<string, object> { ["timezoneId"] = timezoneId });
 
+        public static ToolError InvalidTimeZoneData(string timezoneId, string message) =>
+            new($"Timezone '{timezoneId}' has corrupted or invalid data: {message}",
+                ToolErrorCodes.InvalidTimeZoneData,
+                new Dictionary<string, object>
+                {
+                    ["timezoneId"] = timezoneId,
+                    ["errorMessage"] = message
+                });
+
         public static ToolError TimeZoneConversionFailed(string timezoneId, string message) =>
             new($"Failed to convert time for timezone '{timezoneId}': {message}",
                 ToolErrorCodes.TimeZoneConversionFailed,
