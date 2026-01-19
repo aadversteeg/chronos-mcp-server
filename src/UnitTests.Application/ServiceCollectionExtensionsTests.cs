@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+using Ave.Extensions.Functional;
 using Core.Application;
 using Core.Application.Models;
 using Core.Application.Services;
@@ -16,9 +18,10 @@ namespace UnitTests.Application
             // Arrange
             var services = new ServiceCollection();
             var defaultTimeZoneId = TimeZoneId.Create("UTC").Unwrap();
+            var maybeDefaultTimeZoneId = Maybe<TimeZoneId>.From(defaultTimeZoneId);
 
             // Act
-            services.AddApplicationServices(defaultTimeZoneId);
+            services.AddApplicationServices(maybeDefaultTimeZoneId);
             var serviceProvider = services.BuildServiceProvider();
             var timeService = serviceProvider.GetService<ITimeService>();
 
@@ -33,9 +36,10 @@ namespace UnitTests.Application
             // Arrange
             var services = new ServiceCollection();
             var defaultTimeZoneId = TimeZoneId.Create("UTC").Unwrap();
+            var maybeDefaultTimeZoneId = Maybe<TimeZoneId>.From(defaultTimeZoneId);
 
             // Act
-            services.AddApplicationServices(defaultTimeZoneId);
+            services.AddApplicationServices(maybeDefaultTimeZoneId);
             var serviceProvider = services.BuildServiceProvider();
             var timeService = serviceProvider.GetService<ITimeService>();
 
@@ -47,33 +51,34 @@ namespace UnitTests.Application
         }
 
         [Fact(DisplayName = "SCE-004: AddCoreApplicationServices registers time service that can fetch timezone-based times")]
-        public void SCE004()
+        public async Task SCE004()
         {
             // Arrange
             var services = new ServiceCollection();
             var defaultTimeZoneId = TimeZoneId.Create("UTC").Unwrap();
+            var maybeDefaultTimeZoneId = Maybe<TimeZoneId>.From(defaultTimeZoneId);
 
             // Act
-            services.AddApplicationServices(defaultTimeZoneId);
+            services.AddApplicationServices(maybeDefaultTimeZoneId);
             var serviceProvider = services.BuildServiceProvider();
             var timeService = serviceProvider.GetService<ITimeService>();
 
             // Assert
             timeService.Should().NotBeNull();
-            var result = timeService!.GetCurrentTimeWithTimezone(null);
+            var result = await timeService!.GetCurrentTimeWithTimezone(defaultTimeZoneId);
             result.IsSuccess.Should().BeTrue();
             result.Value.UsedTimezoneId.Value.Should().Be("UTC");
         }
 
-        [Fact(DisplayName = "SCE-005: AddCoreApplicationServices works with null defaultTimeZoneId")]
+        [Fact(DisplayName = "SCE-005: AddCoreApplicationServices works with no defaultTimeZoneId")]
         public void SCE005()
         {
             // Arrange
             var services = new ServiceCollection();
-            TimeZoneId? defaultTimeZoneId = null;
+            var maybeDefaultTimeZoneId = Maybe<TimeZoneId>.None;
 
             // Act
-            services.AddApplicationServices(defaultTimeZoneId);
+            services.AddApplicationServices(maybeDefaultTimeZoneId);
             var serviceProvider = services.BuildServiceProvider();
             var timeService = serviceProvider.GetService<ITimeService>();
 

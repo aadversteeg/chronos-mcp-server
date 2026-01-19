@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Core.Application.Models;
 using Ave.Extensions.Functional;
@@ -33,24 +34,30 @@ namespace Core.Application.Services
         }
 
         /// <inheritdoc />
-        public Result<TimeZoneInfo, Error> GetDefaultTimeZone()
+        public Result<TimeZoneId, Error> GetDefaultTimeZoneId()
         {
             if (_defaultTimeZoneId == null)
             {
-                return Result<TimeZoneInfo, Error>.Failure(ProtocolErrors.NoDefaultTimeZoneId);
+                return Result<TimeZoneId, Error>.Failure(ProtocolErrors.NoDefaultTimeZoneId);
             }
 
-            return GetTimeZoneInfoById(_defaultTimeZoneId.Value);
+            return Result<TimeZoneId, Error>.Success(_defaultTimeZoneId);
         }
 
         /// <inheritdoc />
-        public Result<DateTimeWithTimeZoneId, Error> GetCurrentTimeWithTimezone(TimeZoneId? maybeTimeZoneId)
+        public Result<TimeZoneInfo, Error> GetDefaultTimeZone()
         {
-            return maybeTimeZoneId
-                .Ensure(_defaultTimeZoneId, ProtocolErrors.NoDefaultTimeZoneId)
-                .OnSuccessBind(timeZoneId =>
-                    GetTimeZoneInfoById(timeZoneId.Value)
-                        .OnSuccessBind(ConvertTimeToTimeZone));
+            return GetDefaultTimeZoneId()
+                .OnSuccessBind(timeZoneId => GetTimeZoneInfoById(timeZoneId.Value));
+        }
+
+        /// <inheritdoc />
+        public async Task<Result<DateTimeWithTimeZoneId, Error>> GetCurrentTimeWithTimezone(TimeZoneId timezoneId)
+        {
+            var result = GetTimeZoneInfoById(timezoneId.Value)
+                .OnSuccessBind(ConvertTimeToTimeZone);
+
+            return await Task.FromResult(result);
         }
 
         /// <summary>

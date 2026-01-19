@@ -1,4 +1,5 @@
-﻿using Core.Application;
+﻿using Ave.Extensions.Functional;
+using Core.Application;
 using Core.Application.Extensions;
 using Core.Application.Models;
 using Core.Infrastructure.McpServer.Tools;
@@ -52,13 +53,13 @@ namespace Core.Infrastructure.McpServer
                 consoleLogOptions.LogToStandardErrorThreshold = LogLevel.Trace;
             });
 
-            var defaultTimeZoneId = builder.Configuration
+            var maybeDefaultTimeZoneId = builder.Configuration
                 .GetValue<string>("DefaultTimeZoneId")
-                .Bind(TimeZoneId.Create)
-                .Unwrap();
+                .ToMaybe()
+                .OnSomeBind(str => TimeZoneId.Create(str).ToMaybe());
 
             builder.Services.AddApplicationServices(
-                defaultTimeZoneId, 
+                maybeDefaultTimeZoneId,
                 () => DateTime.UtcNow);
                 
             // Register MCP server and reference the ChronosTools

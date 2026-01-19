@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Core.Application.Models;
 using Core.Application.Services;
 using FluentAssertions;
@@ -98,7 +99,7 @@ namespace UnitTests.Application.Services
             TimeZoneId? nullTimeZoneId = null;
             var timeService = new TimeService(
                 _loggerMock.Object,
-                nullTimeZoneId, 
+                nullTimeZoneId,
                 _fixedDateTimeProvider);
 
             // Act
@@ -109,21 +110,57 @@ namespace UnitTests.Application.Services
             result.Error.Code.Should().Be("NoDefaultTimeZoneId");
             result.Error.Message.Should().Be("DefaultTimeZoneId is not set.");
         }
-        
-        [Fact(DisplayName = "TS-009: GetCurrentTimeWithTimezone returns correct time and timezone with default timezone")]
-        public void TS009()
+
+        [Fact(DisplayName = "TS-007: GetDefaultTimeZoneId returns the default timezone ID")]
+        public void TS007()
         {
             // Arrange
             var timeService = new TimeService(
                 _loggerMock.Object,
-                _defaultTimeZoneId, 
+                _defaultTimeZoneId,
+                _fixedDateTimeProvider);
+
+            // Act
+            var result = timeService.GetDefaultTimeZoneId();
+
+            // Assert
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Value.Should().Be(_defaultTimeZoneId.Value);
+        }
+
+        [Fact(DisplayName = "TS-008: GetDefaultTimeZoneId returns error when default timezone is null")]
+        public void TS008()
+        {
+            // Arrange
+            TimeZoneId? nullTimeZoneId = null;
+            var timeService = new TimeService(
+                _loggerMock.Object,
+                nullTimeZoneId,
+                _fixedDateTimeProvider);
+
+            // Act
+            var result = timeService.GetDefaultTimeZoneId();
+
+            // Assert
+            result.IsFailure.Should().BeTrue();
+            result.Error.Code.Should().Be("NoDefaultTimeZoneId");
+            result.Error.Message.Should().Be("DefaultTimeZoneId is not set.");
+        }
+        
+        [Fact(DisplayName = "TS-009: GetCurrentTimeWithTimezone returns correct time and timezone with specified timezone")]
+        public async Task TS009()
+        {
+            // Arrange
+            var timeService = new TimeService(
+                _loggerMock.Object,
+                _defaultTimeZoneId,
                 _fixedDateTimeProvider);
 
             var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(_defaultTimeZoneId.Value);
             var expectedDateTime = TimeZoneInfo.ConvertTime(_fixedDateTime, timeZoneInfo);
 
             // Act
-            var result = timeService.GetCurrentTimeWithTimezone(null);
+            var result = await timeService.GetCurrentTimeWithTimezone(_defaultTimeZoneId);
 
             // Assert
             result.IsSuccess.Should().BeTrue();
@@ -132,7 +169,7 @@ namespace UnitTests.Application.Services
         }
         
         [Fact(DisplayName = "TS-010: GetCurrentTimeWithTimezone returns correct time and timezone with specified timezone")]
-        public void TS010()
+        public async Task TS010()
         {
             // Skip if running in environment without America/New_York timezone
             var availableTimezones = TimeZoneInfo.GetSystemTimeZones();
@@ -142,47 +179,28 @@ namespace UnitTests.Application.Services
             }
 
             // Arrange
-            var tzId = availableTimezones.Any(tz => tz.Id == "America/New_York") 
-                ? "America/New_York" 
+            var tzId = availableTimezones.Any(tz => tz.Id == "America/New_York")
+                ? "America/New_York"
                 : "Eastern Standard Time"; // Windows equivalent
-                
+
             var timeService = new TimeService(
                 _loggerMock.Object,
-                _defaultTimeZoneId, 
+                _defaultTimeZoneId,
                 _fixedDateTimeProvider);
 
             var expectedTimezone = TimeZoneInfo.FindSystemTimeZoneById(tzId);
             var expectedDateTime = TimeZoneInfo.ConvertTime(_fixedDateTime, expectedTimezone);
-            
+
             var timezoneIdResult = TimeZoneId.Create(tzId);
             timezoneIdResult.IsSuccess.Should().BeTrue();
 
             // Act
-            var result = timeService.GetCurrentTimeWithTimezone(timezoneIdResult.Value);
+            var result = await timeService.GetCurrentTimeWithTimezone(timezoneIdResult.Value);
 
             // Assert
             result.IsSuccess.Should().BeTrue();
             result.Value.CurrentDateTime.Should().Be(expectedDateTime);
             result.Value.UsedTimezoneId.Value.Should().Be(tzId);
-        }
-        
-        [Fact(DisplayName = "TS-011: GetCurrentTimeWithTimezone returns error when no timezone provided and default is null")]
-        public void TS011()
-        {
-            // Arrange
-            TimeZoneId? nullTimeZoneId = null;
-            var timeService = new TimeService(
-                _loggerMock.Object,
-                nullTimeZoneId, 
-                _fixedDateTimeProvider);
-
-            // Act
-            var result = timeService.GetCurrentTimeWithTimezone(null);
-
-            // Assert
-            result.IsFailure.Should().BeTrue();
-            result.Error.Code.Should().Be("NoDefaultTimeZoneId");
-            result.Error.Message.Should().Be("DefaultTimeZoneId is not set.");
         }
     }
 }

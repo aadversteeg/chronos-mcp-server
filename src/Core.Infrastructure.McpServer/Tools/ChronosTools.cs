@@ -30,11 +30,11 @@ namespace Core.Infrastructure.McpServer.Tools
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _timeService = timeService ?? throw new ArgumentNullException(nameof(timeService));
-            
+
             var defaultTimezoneResult = _timeService.GetDefaultTimeZone();
             if (defaultTimezoneResult.IsSuccess)
             {
-                _logger.LogInformation("ChronosTools initialized with timezone: {Timezone}", 
+                _logger.LogInformation("ChronosTools initialized with timezone: {Timezone}",
                     defaultTimezoneResult.Value.Id);
             }
             else
@@ -60,18 +60,20 @@ namespace Core.Infrastructure.McpServer.Tools
             _logger.LogInformation("Getting current date and time for timezone: {TimezoneId}", timezoneId ?? "(default)");
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Convert the string to TimeZoneId, handle null, and get current time
-            var result = timezoneId
-                .Bind(TimeZoneId.Create) // Convert string to Result<TimeZoneId, Error>
-                .OnSuccessBind(_timeService.GetCurrentTimeWithTimezone) // Get current time with timezone
+            // Convert string? to Maybe, then Match: OnSome creates TimeZoneId, OnNone gets default TimeZoneId
+            // Then get current time and convert to CallToolResult
+            return await timezoneId
+                .ToMaybe()
+                .Match(
+                    onSome: id => TimeZoneId.Create(id),
+                    onNone: () => _timeService.GetDefaultTimeZoneId()
+                )
+                .OnSuccessBindAsync(resolvedTimeZoneId => _timeService.GetCurrentTimeWithTimezone(resolvedTimeZoneId))
                 .ToCallToolResult(result => new {
                     Date = result.CurrentDateTime.ToString("yyyy-MM-dd"),
                     Time = result.CurrentDateTime.ToString("HH:mm:ss"),
                     Timezone = result.UsedTimezoneId.Value
                 });
-
-            await Task.CompletedTask;
-            return result;
         }
 
         /// <summary>
@@ -81,17 +83,14 @@ namespace Core.Infrastructure.McpServer.Tools
         /// <returns>CallToolResult containing the default timezone identifier.</returns>
         /// <exception cref="McpException">Thrown when an error occurs during processing.</exception>
         [McpServerTool(Name = "get_default_timezone_id", ReadOnly = true, OpenWorld = false), Description("Gets the default timezone identifier. Used to determine the current time when no timezone id is specified.")]
-        public async Task<CallToolResult> GetDefaultTimeZoneId(CancellationToken cancellationToken = default)
+        public CallToolResult GetDefaultTimeZoneId(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Getting default time zone information");
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Get the default timezone and return its ID
-            var result = _timeService.GetDefaultTimeZone()
-                .ToCallToolResult(timeZone => timeZone.Id);
-
-            await Task.CompletedTask;
-            return result;
+            // Get the default timezone ID directly
+            return _timeService.GetDefaultTimeZoneId()
+                .ToCallToolResult(timeZoneId => timeZoneId.Value);
         }
     }
 }

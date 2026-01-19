@@ -32,94 +32,20 @@ namespace Core.Application.Extensions
         }
 
         /// <summary>
-        /// Ensures that a nullable reference type has a value, using a default value if provided.
+        /// Converts a nullable string to a Maybe&lt;string&gt;.
+        /// Null or whitespace strings are converted to Maybe.None, otherwise to Maybe.From(value).
         /// </summary>
-        /// <typeparam name="T">The reference type.</typeparam>
-        /// <param name="source">The nullable source value.</param>
-        /// <param name="defaultValue">The default value to use if source is null.</param>
-        /// <param name="error">The error to return if both source and defaultValue are null.</param>
+        /// <param name="source">The nullable string to convert.</param>
         /// <returns>
-        /// A Result containing either:
-        /// - The source value if it's not null
-        /// - The defaultValue if source is null and defaultValue is not null
-        /// - A failure with the specified error if both source and defaultValue are null
+        /// A Maybe&lt;string&gt; that:
+        /// - Has no value (None) when source is null or whitespace
+        /// - Has a value (Some) when source is a non-empty string
         /// </returns>
-        public static Result<T, Error> Ensure<T>(this T? source, T? defaultValue, Error error) 
-            where T : class
+        public static Maybe<string> ToMaybe(this string? source)
         {
-            if (source == null)
-            {
-                if (defaultValue == null)
-                {
-                    return Result<T, Error>.Failure(error);
-                }
-                return Result<T, Error>.Success(defaultValue);
-            }
-            return Result<T, Error>.Success(source);
-        }
-
-        /// <summary>
-        /// Ensures that a nullable value type has a value, using a default value if source is null.
-        /// </summary>
-        /// <typeparam name="T">The value type.</typeparam>
-        /// <param name="source">The nullable source value.</param>
-        /// <param name="defaultValue">The default value to use if source is null.</param>
-        /// <param name="error">The error to return if an error occurs (not used in this overload).</param>
-        /// <returns>
-        /// A Result containing either:
-        /// - The source value if it has a value
-        /// - The defaultValue if source is null
-        /// </returns>
-        public static Result<T, Error> Ensure<T>(this T? source, T defaultValue, Error error) 
-            where T : struct
-        {
-            if (source == null)
-            {
-                return Result<T, Error>.Success(defaultValue);
-            }
-            return Result<T, Error>.Success(source.Value);
-        }
-
-        /// <summary>
-        /// Ensures that a nullable value type has a value, returning an error if null.
-        /// </summary>
-        /// <typeparam name="T">The value type.</typeparam>
-        /// <param name="source">The nullable source value.</param>
-        /// <param name="error">The error to return if the source is null.</param>
-        /// <returns>
-        /// A Result containing either:
-        /// - The source value if it has a value
-        /// - A failure with the specified error if source is null
-        /// </returns>
-        public static Result<T, Error> Ensure<T>(this T? source, Error error) 
-            where T : struct
-        {
-            if (source == null)
-            {
-                return Result<T, Error>.Failure(error);
-            }
-            return Result<T, Error>.Success(source.Value);
-        }
-        
-        /// <summary>
-        /// Ensures that a nullable reference type has a value, returning an error if null.
-        /// </summary>
-        /// <typeparam name="T">The reference type.</typeparam>
-        /// <param name="source">The nullable source value.</param>
-        /// <param name="error">The error to return if the source is null.</param>
-        /// <returns>
-        /// A Result containing either:
-        /// - The source value if it's not null
-        /// - A failure with the specified error if source is null
-        /// </returns>
-        public static Result<T, Error> Ensure<T>(this T? source, Error error) 
-            where T : class
-        {
-            if (source == null)
-            {
-                return Result<T, Error>.Failure(error);
-            }
-            return Result<T, Error>.Success(source);
+            return string.IsNullOrWhiteSpace(source)
+                ? Maybe<string>.None
+                : Maybe<string>.From(source);
         }
     }
 }

@@ -46,39 +46,33 @@ namespace UnitTests.Infrastructure.McpServer.Tools
             // Setup default behavior for ITimeService
             _timeServiceMock.Setup(s => s.GetDefaultTimeZone())
                 .Returns(Result<TimeZoneInfo, Error>.Success(_defaultTimezoneInfo));
-            
-            // Setup the GetCurrentTimeWithTimezone method with DateTimeWithTimeZoneId
-            _timeServiceMock.Setup(s => s.GetCurrentTimeWithTimezone(It.IsAny<TimeZoneId?>()))
-                .Returns((TimeZoneId? tz) => 
+
+            // Setup GetDefaultTimeZoneId to return TimeZoneId
+            _timeServiceMock.Setup(s => s.GetDefaultTimeZoneId())
+                .Returns(() =>
                 {
-                    if (tz == null)
+                    var timeZoneIdResult = TimeZoneId.Create(_defaultTimezoneInfo.Id);
+                    return timeZoneIdResult;
+                });
+
+            // Setup the GetCurrentTimeWithTimezone method with DateTimeWithTimeZoneId
+            _timeServiceMock.Setup(s => s.GetCurrentTimeWithTimezone(It.IsAny<TimeZoneId>()))
+                .ReturnsAsync((TimeZoneId tz) =>
+                {
+                    try
                     {
-                        var defaultTzIdResult = TimeZoneId.Create(_defaultTimezoneInfo.Id);
-                        defaultTzIdResult.IsSuccess.Should().BeTrue("Default timezone ID should be valid");
-                        
+                        var targetTimeZone = TimeZoneInfo.FindSystemTimeZoneById(tz.Value);
+
                         var dateTimeWithTz = new DateTimeWithTimeZoneId(
-                            TimeZoneInfo.ConvertTime(_fixedDateTime, _defaultTimezoneInfo), 
-                            defaultTzIdResult.Value);
-                            
+                            TimeZoneInfo.ConvertTime(_fixedDateTime, targetTimeZone),
+                            tz);
+
                         return Result<DateTimeWithTimeZoneId, Error>.Success(dateTimeWithTz);
                     }
-                    else
+                    catch (TimeZoneNotFoundException)
                     {
-                        try
-                        {
-                            var targetTimeZone = TimeZoneInfo.FindSystemTimeZoneById(tz.Value);
-                            
-                            var dateTimeWithTz = new DateTimeWithTimeZoneId(
-                                TimeZoneInfo.ConvertTime(_fixedDateTime, targetTimeZone), 
-                                tz);
-                                
-                            return Result<DateTimeWithTimeZoneId, Error>.Success(dateTimeWithTz);
-                        }
-                        catch (TimeZoneNotFoundException)
-                        {
-                            return Result<DateTimeWithTimeZoneId, Error>.Failure(
-                                new ProtocolError($"Timezone ID '{tz.Value}' was not found", "TimeZoneNotFound"));
-                        }
+                        return Result<DateTimeWithTimeZoneId, Error>.Failure(
+                            new ProtocolError($"Timezone ID '{tz.Value}' was not found", "TimeZoneNotFound"));
                     }
                 });
         }
@@ -127,7 +121,7 @@ namespace UnitTests.Infrastructure.McpServer.Tools
             response!.Timezone.Should().Be(_defaultTimezoneInfo.Id);
 
             // Use the GetCurrentTimeWithTimezone method
-            _timeServiceMock.Verify(s => s.GetCurrentTimeWithTimezone(It.IsAny<TimeZoneId?>()), Times.Once);
+            _timeServiceMock.Verify(s => s.GetCurrentTimeWithTimezone(It.IsAny<TimeZoneId>()), Times.Once);
         }
 
         [Fact(DisplayName = "CT-004: GetCurrentDateAndTime returns correct data with custom timezone")]
@@ -159,8 +153,7 @@ namespace UnitTests.Infrastructure.McpServer.Tools
 
             // Since we're using a string parameter, the ChronosTools should convert it to a TimeZoneId
             // and then pass it to the TimeService
-            _timeServiceMock.Verify(s => s.GetCurrentTimeWithTimezone(It.Is<TimeZoneId?>(t =>
-                t != null)), Times.Once);
+            _timeServiceMock.Verify(s => s.GetCurrentTimeWithTimezone(It.IsAny<TimeZoneId>()), Times.Once);
 
             // Additionally verify that the timezone value inside the parameter matches what's expected
             response.Timezone.Should().Be(tzId);
@@ -185,17 +178,17 @@ namespace UnitTests.Infrastructure.McpServer.Tools
             // No specific message check since the implementation has changed to use functional extensions
 
             // Verify the TimeService was never called since validation fails early
-            _timeServiceMock.Verify(s => s.GetCurrentTimeWithTimezone(It.IsAny<TimeZoneId?>()), Times.Never);
+            _timeServiceMock.Verify(s => s.GetCurrentTimeWithTimezone(It.IsAny<TimeZoneId>()), Times.Never);
         }
 
         [Fact(DisplayName = "CT-006: GetDefaultTimeZoneId returns correct timezone ID")]
-        public async Task CT006()
+        public void CT006()
         {
             // Arrange
             var chronosTools = new ChronosTools(_loggerMock.Object, _timeServiceMock.Object);
 
             // Act
-            var callResult = await chronosTools.GetDefaultTimeZoneId();
+            var callResult = chronosTools.GetDefaultTimeZoneId();
             var textContent = callResult.Content.OfType<ModelContextProtocol.Protocol.TextContentBlock>().FirstOrDefault()?.Text;
             textContent.Should().NotBeNull();
 
@@ -207,19 +200,19 @@ namespace UnitTests.Infrastructure.McpServer.Tools
         }
 
         [Fact(DisplayName = "CT-007: GetDefaultTimeZoneId throws McpException when error occurs")]
-        public async Task CT007()
+        public void CT007()
         {
             // Arrange
             var chronosTools = new ChronosTools(_loggerMock.Object, _timeServiceMock.Object);
 
             // Setup to return failure after constructor has completed
-            _timeServiceMock.Setup(s => s.GetDefaultTimeZone())
-                .Returns(Result<TimeZoneInfo, Error>.Failure(
+            _timeServiceMock.Setup(s => s.GetDefaultTimeZoneId())
+                .Returns(Result<TimeZoneId, Error>.Failure(
                     new ProtocolError("Test exception", "TestError")));
 
             // Act & Assert
-            Func<Task> act = async () => await chronosTools.GetDefaultTimeZoneId();
-            await act.Should().ThrowAsync<McpException>();
+            Action act = () => chronosTools.GetDefaultTimeZoneId();
+            act.Should().Throw<McpException>();
             // No specific message check since the implementation has changed to use functional extensions
         }
 
