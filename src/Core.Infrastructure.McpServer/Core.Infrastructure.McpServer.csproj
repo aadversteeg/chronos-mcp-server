@@ -11,10 +11,33 @@
     <AssemblyVersion>0.0.0</AssemblyVersion>
     <FileVersion>0.0.0</FileVersion>
     <Version>0.0.0</Version>
+
+    <!-- .NET Tool Configuration -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>ave-mcpserver-chronos</ToolCommandName>
+    <PackageId>Ave.McpServer.Chronos</PackageId>
+    <IsPackable>true</IsPackable>
+
+    <!-- Package Metadata -->
+    <Authors>Aad Versteeg</Authors>
+    <Company>Versteeg IT Solutions</Company>
+    <Description>MCP server providing time and timezone tools for AI assistants</Description>
+    <PackageTags>mcp;model-context-protocol;chronos;time;timezone;ai</PackageTags>
+    <PackageProjectUrl>https://github.com/aadversteeg/chronos-mcp-server</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aadversteeg/chronos-mcp-server</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <!-- Source Link for debugging -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
     <PackageReference Include="ModelContextProtocol" Version="0.6.0-preview.1" />
   </ItemGroup>
