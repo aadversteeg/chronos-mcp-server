@@ -17,7 +17,7 @@ The Chronos MCP server is built with .NET Core using the Model Context Protocol 
 
 ### Prerequisites
 
-- .NET 9.0 (for local development/deployment)
+- .NET 10 SDK (for local development or .NET tool installation)
 - Docker (for container deployment)
 
 
@@ -89,6 +89,32 @@ To trigger a new build:
 2. The workflow will automatically build and push the Docker image with the tags:
    - `aadversteeg/chronos-mcp-server:latest`
    - `aadversteeg/chronos-mcp-server:1.0.0`
+
+## .NET Tool
+
+The Chronos MCP Server is available as a .NET global tool on NuGet.
+
+### Installation
+
+```bash
+dotnet tool install --global Ave.McpServer.Chronos
+```
+
+### Running
+
+```bash
+ave-mcpserver-chronos
+```
+
+### One-shot execution (without permanent installation)
+
+With .NET 10 SDK, you can run the tool without installing it globally using `dotnet tool exec`:
+
+```bash
+dotnet tool exec -y ave.mcpserver.chronos
+```
+
+The `-y` flag accepts prompts automatically. The tool is cached locally but not added to your PATH.
 
 ## MCP Protocol Usage
 
@@ -182,18 +208,22 @@ Valid timezone identifiers include:
 
 If the DefaultTimeZoneId setting is not specified, no default timezone will be used, and requests must explicitly provide a timezone ID parameter.
 
-## Configuring Claude Desktop
+## Configuring Claude Desktop / Claude Code
 
-### Using Local Installation
+Add the server configuration to the `mcpServers` section in your configuration file.
 
-To configure Claude Desktop to use a locally installed Chronos server:
+### Using .NET Tool
 
-1. Add the server configuration to the `mcpServers` section in your Claude Desktop configuration:
+Requires .NET 10 SDK. This approach automatically downloads and caches the tool on first use.
+
 ```json
 "chronos": {
   "command": "dotnet",
   "args": [
-    "YOUR_PATH_TO_DLL\\Core.Infrastructure.McpServer.dll"
+    "tool",
+    "exec",
+    "-y",
+    "ave.mcpserver.chronos"
   ],
   "env": {
     "DefaultTimeZoneId": "Europe/Amsterdam"
@@ -201,13 +231,24 @@ To configure Claude Desktop to use a locally installed Chronos server:
 }
 ```
 
-2. Save the file and restart Claude Desktop
+**Note:** The tool is cached after first download and won't auto-update. To update to a newer version, clear the package from cache:
 
-### Using Docker Container
+| OS | Cache location |
+|----|----------------|
+| Windows | `%USERPROFILE%\.nuget\packages\ave.mcpserver.chronos` |
+| macOS/Linux | `~/.nuget/packages/ave.mcpserver.chronos` |
 
-To use the Chronos server from a Docker container with Claude Desktop:
+```bash
+# Or clear entire NuGet cache (all platforms)
+dotnet nuget locals global-packages --clear
+```
 
-1. Add the server configuration to the `mcpServers` section in your Claude Desktop configuration:
+Alternatively, specify a version explicitly: `ave.mcpserver.chronos@0.0.10`
+
+### Using Docker
+
+Does not require .NET 10 SDK.
+
 ```json
 "chronos": {
   "command": "docker",
@@ -220,18 +261,6 @@ To use the Chronos server from a Docker container with Claude Desktop:
   ]
 }
 ```
-
-2. Save the file and restart Claude Desktop
-
-## Configuring Claude Code
-
-To add the chronos server to Claude Code, use the following command:
-
-```bash
-claude mcp add chronos -- docker run -i --rm -e DefaultTimeZoneId=Europe/Amsterdam aadversteeg/chronos-mcp-server:latest
-```
-
-You can customize the default timezone by modifying the DefaultTimeZoneId environment variable.
 
 ## License
 
