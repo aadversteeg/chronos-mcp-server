@@ -214,7 +214,7 @@ Add the server configuration to the `mcpServers` section in your configuration f
 
 ### Using .NET Tool
 
-Requires .NET 10 SDK. This approach automatically downloads and caches the tool on first use.
+Requires .NET 10 SDK. This approach automatically downloads the tool on first use and updates to the latest version on subsequent runs.
 
 ```json
 "chronos": {
@@ -231,19 +231,24 @@ Requires .NET 10 SDK. This approach automatically downloads and caches the tool 
 }
 ```
 
-**Note:** The tool is cached after first download and won't auto-update. To update to a newer version, clear the package from cache:
+### Using Global Installation
 
-| OS | Cache location |
-|----|----------------|
-| Windows | `%USERPROFILE%\.nuget\packages\ave.mcpserver.chronos` |
-| macOS/Linux | `~/.nuget/packages/ave.mcpserver.chronos` |
+Requires .NET 10 SDK. Install the tool once, then use it directly.
 
 ```bash
-# Or clear entire NuGet cache (all platforms)
-dotnet nuget locals global-packages --clear
+dotnet tool install --global Ave.McpServer.Chronos
 ```
 
-Alternatively, specify a version explicitly: `ave.mcpserver.chronos@0.0.10`
+```json
+"chronos": {
+  "command": "ave-mcpserver-chronos",
+  "env": {
+    "DefaultTimeZoneId": "Europe/Amsterdam"
+  }
+}
+```
+
+To update: `dotnet tool update --global Ave.McpServer.Chronos`
 
 ### Using Docker
 
