@@ -6,6 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Ave.Extensions.ErrorPaths" Version="0.0.2-preview.1" />
+    <PackageReference Include="Ave.Extensions.ErrorPaths.Functional" Version="0.0.2-preview.1" />
     <PackageReference Include="Ave.Extensions.Functional" Version="0.0.5-preview.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />

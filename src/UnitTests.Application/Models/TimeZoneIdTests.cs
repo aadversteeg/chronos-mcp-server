@@ -1,4 +1,6 @@
 using System;
+using Ave.Extensions.ErrorPaths;
+using Ave.Extensions.ErrorPaths.FluentAssertions;
 using Core.Application.Models;
 using FluentAssertions;
 using Ave.Extensions.Functional.FluentAssertions;
@@ -13,7 +15,7 @@ namespace UnitTests.Application.Models
         {
             // Arrange
             string validTimezoneId = "UTC";
-            
+
             // Try to get a valid timezone ID on the system
             try
             {
@@ -51,16 +53,22 @@ namespace UnitTests.Application.Models
 
             // Assert
             resultNull.Should().Fail();
-            resultNull.Error.Message.Should().Contain("cannot be null or empty");
-            resultNull.Error.Code.Should().Be("NullValueForTimeZoneIdValue");
+            resultNull.Error.Should()
+                .HaveCode(ChronosErrorCodes.Validation.RequiredTimeZoneId)
+                .And.HaveMessage("TimeZoneId value cannot be null or empty.")
+                .And.MatchCode(ErrorCodes.Validation._);
 
             resultEmpty.Should().Fail();
-            resultEmpty.Error.Message.Should().Contain("cannot be null or empty");
-            resultEmpty.Error.Code.Should().Be("NullValueForTimeZoneIdValue");
+            resultEmpty.Error.Should()
+                .HaveCode(ChronosErrorCodes.Validation.RequiredTimeZoneId)
+                .And.HaveMessage("TimeZoneId value cannot be null or empty.")
+                .And.MatchCode(ErrorCodes.Validation._);
 
             resultWhitespace.Should().Fail();
-            resultWhitespace.Error.Message.Should().Contain("cannot be null or empty");
-            resultWhitespace.Error.Code.Should().Be("NullValueForTimeZoneIdValue");
+            resultWhitespace.Error.Should()
+                .HaveCode(ChronosErrorCodes.Validation.RequiredTimeZoneId)
+                .And.HaveMessage("TimeZoneId value cannot be null or empty.")
+                .And.MatchCode(ErrorCodes.Validation._);
         }
 
         [Fact(DisplayName = "TZI-003: Create with invalid timezone ID returns Failure")]
@@ -74,9 +82,11 @@ namespace UnitTests.Application.Models
 
             // Assert
             result.Should().Fail();
-            result.Error.Message.Should().Contain("Invalid TimeZoneId value");
-            result.Error.Message.Should().Contain(invalidTimezoneId);
-            result.Error.Code.Should().Be("InvalidTimeZoneIdValue");
+            result.Error.Should()
+                .HaveCode(ChronosErrorCodes.Validation.InvalidTimeZoneId)
+                .And.HaveMessage($"Invalid TimeZoneId value: {invalidTimezoneId}.")
+                .And.MatchCode(ErrorCodes.Validation._)
+                .And.HaveMetadataEntry("providedValue", invalidTimezoneId);
         }
 
         [Fact(DisplayName = "TZI-004: TimeZoneId Value property returns the timezone ID")]
@@ -84,7 +94,7 @@ namespace UnitTests.Application.Models
         {
             // Arrange
             string validTimezoneId = "UTC";
-            
+
             // Try to get a valid timezone ID on the system
             try
             {

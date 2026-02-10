@@ -1,4 +1,5 @@
-﻿using Core.Application.Models;
+using Ave.Extensions.ErrorPaths;
+using Core.Application.Models;
 using Core.Application.Services;
 using Core.Infrastructure.McpServer.Tools;
 using FluentAssertions;
@@ -16,8 +17,8 @@ namespace UnitTests.Infrastructure.McpServer.Tools
         private readonly Mock<ITimeService> _timeServiceMock;
         private readonly TimeZoneInfo _defaultTimezoneInfo;
         private readonly DateTime _fixedDateTime = new DateTime(2023, 12, 25, 12, 0, 0, DateTimeKind.Utc);
-        private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions 
-        { 
+        private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        {
             PropertyNameCaseInsensitive = true
         };
 
@@ -25,7 +26,7 @@ namespace UnitTests.Infrastructure.McpServer.Tools
         {
             _loggerMock = new Mock<ILogger<ChronosTools>>();
             _timeServiceMock = new Mock<ITimeService>();
-            
+
             // Try to get Amsterdam timezone, or fall back to UTC
             try
             {
@@ -42,7 +43,7 @@ namespace UnitTests.Infrastructure.McpServer.Tools
                     _defaultTimezoneInfo = TimeZoneInfo.Utc;
                 }
             }
-            
+
             // Setup default behavior for ITimeService
             _timeServiceMock.Setup(s => s.GetDefaultTimeZone())
                 .Returns(Result<TimeZoneInfo, Error>.Success(_defaultTimezoneInfo));
@@ -72,7 +73,7 @@ namespace UnitTests.Infrastructure.McpServer.Tools
                     catch (TimeZoneNotFoundException)
                     {
                         return Result<DateTimeWithTimeZoneId, Error>.Failure(
-                            new ProtocolError($"Timezone ID '{tz.Value}' was not found", "TimeZoneNotFound"));
+                            ChronosErrors.TimeZoneNotFound(tz.Value));
                     }
                 });
         }
@@ -82,7 +83,7 @@ namespace UnitTests.Infrastructure.McpServer.Tools
         {
             // Arrange
             ILogger<ChronosTools> logger = null!;
-            
+
             // Act & Assert
             Action act = () => new ChronosTools(logger, _timeServiceMock.Object);
             act.Should().Throw<ArgumentNullException>()
@@ -94,7 +95,7 @@ namespace UnitTests.Infrastructure.McpServer.Tools
         {
             // Arrange
             ITimeService timeService = null!;
-            
+
             // Act & Assert
             Action act = () => new ChronosTools(_loggerMock.Object, timeService);
             act.Should().Throw<ArgumentNullException>()
@@ -206,9 +207,10 @@ namespace UnitTests.Infrastructure.McpServer.Tools
             var chronosTools = new ChronosTools(_loggerMock.Object, _timeServiceMock.Object);
 
             // Setup to return failure after constructor has completed
+            // Use a Validation error code so it routes to McpException
             _timeServiceMock.Setup(s => s.GetDefaultTimeZoneId())
                 .Returns(Result<TimeZoneId, Error>.Failure(
-                    new ProtocolError("Test exception", "TestError")));
+                    new Error(ErrorCodes.Validation._, "Test exception")));
 
             // Act & Assert
             Action act = () => chronosTools.GetDefaultTimeZoneId();

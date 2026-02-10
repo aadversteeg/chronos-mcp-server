@@ -1,5 +1,5 @@
-﻿using Ave.Extensions.Functional;
-using Core.Application.Models;
+using Ave.Extensions.ErrorPaths;
+using Ave.Extensions.Functional;
 using System;
 using System.Threading.Tasks;
 
@@ -23,10 +23,10 @@ namespace Core.Application.Extensions
             {
                 return result.Value;
             }
-            
+
             throw new InvalidOperationException(result.Error.Message);
         }
-        
+
         /// <summary>
         /// Extracts the value from a successful Result or throws an exception with a custom error message if the Result is a failure.
         /// </summary>

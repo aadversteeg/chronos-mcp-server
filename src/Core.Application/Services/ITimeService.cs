@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Ave.Extensions.ErrorPaths;
 using Ave.Extensions.Functional;
 using Core.Application.Models;
 

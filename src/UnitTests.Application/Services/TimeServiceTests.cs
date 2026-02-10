@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Ave.Extensions.ErrorPaths;
+using Ave.Extensions.ErrorPaths.FluentAssertions;
 using Core.Application.Models;
 using Core.Application.Services;
 using FluentAssertions;
@@ -21,7 +23,7 @@ namespace UnitTests.Application.Services
         {
             _loggerMock = new Mock<ILogger<TimeService>>();
             _fixedDateTimeProvider = () => _fixedDateTime;
-            
+
             // Try to get Amsterdam timezone, or fall back to UTC
             string tzId;
             try
@@ -41,7 +43,7 @@ namespace UnitTests.Application.Services
                     tzId = "UTC";
                 }
             }
-            
+
             var defaultTimeZoneIdResult = TimeZoneId.Create(tzId);
             defaultTimeZoneIdResult.IsSuccess.Should().BeTrue();
             _defaultTimeZoneId = defaultTimeZoneIdResult.Value;
@@ -52,7 +54,7 @@ namespace UnitTests.Application.Services
         {
             // Arrange
             ILogger<TimeService> logger = null!;
-            
+
             // Act
             Action act = () => new TimeService(logger, _defaultTimeZoneId, _fixedDateTimeProvider);
 
@@ -66,7 +68,7 @@ namespace UnitTests.Application.Services
         {
             // Arrange
             Func<DateTime> currentDateTimeProvider = null!;
-            
+
             // Act
             Action act = () => new TimeService(_loggerMock.Object, _defaultTimeZoneId, currentDateTimeProvider);
 
@@ -81,7 +83,7 @@ namespace UnitTests.Application.Services
             // Arrange
             var timeService = new TimeService(
                 _loggerMock.Object,
-                _defaultTimeZoneId, 
+                _defaultTimeZoneId,
                 _fixedDateTimeProvider);
 
             // Act
@@ -91,7 +93,7 @@ namespace UnitTests.Application.Services
             result.IsSuccess.Should().BeTrue();
             result.Value.Id.Should().Be(_defaultTimeZoneId.Value);
         }
-        
+
         [Fact(DisplayName = "TS-006: GetDefaultTimeZone returns error when default timezone is null")]
         public void TS006()
         {
@@ -107,8 +109,10 @@ namespace UnitTests.Application.Services
 
             // Assert
             result.IsFailure.Should().BeTrue();
-            result.Error.Code.Should().Be("NoDefaultTimeZoneId");
-            result.Error.Message.Should().Be("DefaultTimeZoneId is not set.");
+            result.Error.Should()
+                .HaveCode(ChronosErrorCodes.Configuration.DefaultTimeZoneId)
+                .And.HaveMessage("DefaultTimeZoneId is not set.")
+                .And.MatchCode(ErrorCodes.Internal._);
         }
 
         [Fact(DisplayName = "TS-007: GetDefaultTimeZoneId returns the default timezone ID")]
@@ -143,10 +147,12 @@ namespace UnitTests.Application.Services
 
             // Assert
             result.IsFailure.Should().BeTrue();
-            result.Error.Code.Should().Be("NoDefaultTimeZoneId");
-            result.Error.Message.Should().Be("DefaultTimeZoneId is not set.");
+            result.Error.Should()
+                .HaveCode(ChronosErrorCodes.Configuration.DefaultTimeZoneId)
+                .And.HaveMessage("DefaultTimeZoneId is not set.")
+                .And.MatchCode(ErrorCodes.Internal._);
         }
-        
+
         [Fact(DisplayName = "TS-009: GetCurrentTimeWithTimezone returns correct time and timezone with specified timezone")]
         public async Task TS009()
         {
@@ -167,7 +173,7 @@ namespace UnitTests.Application.Services
             result.Value.CurrentDateTime.Should().Be(expectedDateTime);
             result.Value.UsedTimezoneId.Value.Should().Be(_defaultTimeZoneId.Value);
         }
-        
+
         [Fact(DisplayName = "TS-010: GetCurrentTimeWithTimezone returns correct time and timezone with specified timezone")]
         public async Task TS010()
         {

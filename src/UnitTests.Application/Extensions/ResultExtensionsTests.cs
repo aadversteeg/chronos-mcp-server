@@ -1,5 +1,5 @@
-﻿using Ave.Extensions.Functional;
-using Core.Application.Models;
+using Ave.Extensions.ErrorPaths;
+using Ave.Extensions.Functional;
 using Core.Application.Extensions;
 using FluentAssertions;
 using System;
@@ -15,10 +15,10 @@ namespace UnitTests.Application.Extensions
             // Arrange
             var expectedValue = "test data";
             var successResult = Result<string, Error>.Success(expectedValue);
-            
+
             // Act
             var result = successResult.Unwrap();
-            
+
             // Assert
             result.Should().Be(expectedValue);
         }
@@ -28,8 +28,8 @@ namespace UnitTests.Application.Extensions
         {
             // Arrange
             var errorMessage = "Test error message";
-            var failureResult = Result<string, Error>.Failure(new ProtocolError(errorMessage, "ErrorCode"));
-            
+            var failureResult = Result<string, Error>.Failure(new Error(new ErrorCode("ErrorCode"), errorMessage));
+
             // Act & Assert
             Action act = () => failureResult.Unwrap();
             act.Should().Throw<InvalidOperationException>()
@@ -42,24 +42,24 @@ namespace UnitTests.Application.Extensions
             // Arrange
             var originalErrorMessage = "Original error message";
             var customErrorMessage = "Custom error message";
-            var failureResult = Result<string, Error>.Failure(new ProtocolError(originalErrorMessage, "ErrorCode"));
-            
+            var failureResult = Result<string, Error>.Failure(new Error(new ErrorCode("ErrorCode"), originalErrorMessage));
+
             // Act & Assert
             Action act = () => failureResult.Unwrap(customErrorMessage);
             act.Should().Throw<InvalidOperationException>()
                 .WithMessage(customErrorMessage);
         }
-        
+
         [Fact(DisplayName = "RE-004: Unwrap returns the value for success result with custom error message overload")]
         public void RE004()
         {
             // Arrange
             var expectedValue = "test data";
             var successResult = Result<string, Error>.Success(expectedValue);
-            
+
             // Act
             var result = successResult.Unwrap("This error message should not be used");
-            
+
             // Assert
             result.Should().Be(expectedValue);
         }

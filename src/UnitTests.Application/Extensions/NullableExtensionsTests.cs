@@ -1,6 +1,6 @@
-﻿using Ave.Extensions.Functional;
+using Ave.Extensions.ErrorPaths;
+using Ave.Extensions.Functional;
 using Ave.Extensions.Functional.FluentAssertions;
-using Core.Application.Models;
 using Core.Application.Extensions;
 using FluentAssertions;
 using System;
@@ -15,18 +15,18 @@ namespace UnitTests.Application.Extensions
         {
             // Arrange
             string? input = "42";
-            Func<string, Result<int, Error>> parseFunc = str => 
+            Func<string, Result<int, Error>> parseFunc = str =>
             {
                 if (int.TryParse(str, out int value))
                 {
                     return Result<int, Error>.Success(value);
                 }
-                return Result<int, Error>.Failure(new ProtocolError("Failed to parse", "ParseError"));
+                return Result<int, Error>.Failure(new Error(new ErrorCode("ParseError"), "Failed to parse"));
             };
-            
+
             // Act
             var result = input.Bind(parseFunc);
-            
+
             // Assert
             result.Should().SucceedWith(42);
         }
@@ -36,7 +36,7 @@ namespace UnitTests.Application.Extensions
         {
             // Arrange
             string? input = "not a number";
-            var error = new ProtocolError("Failed to parse", "ParseError");
+            var error = new Error(new ErrorCode("ParseError"), "Failed to parse");
             Func<string, Result<int, Error>> parseFunc = str =>
             {
                 if (int.TryParse(str, out int value))

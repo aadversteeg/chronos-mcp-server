@@ -1,9 +1,9 @@
+using Ave.Extensions.ErrorPaths;
 using Ave.Extensions.Functional;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
-using Core.Application.Models;
 
 namespace Core.Infrastructure.McpServer.Extensions
 {
@@ -25,8 +25,8 @@ namespace Core.Infrastructure.McpServer.Extensions
         /// <summary>
         /// Converts a Result to a CallToolResult for MCP tool responses.
         /// - On success: Returns CallToolResult with JSON-serialized transformed value as content
-        /// - On ProtocolError: Throws McpException (invalid parameters, invisible to LLM)
-        /// - On ToolError: Returns CallToolResult.IsError (operational failure, visible to LLM for retry)
+        /// - On validation/configuration error: Throws McpException (invisible to LLM)
+        /// - On operational error: Returns CallToolResult.IsError (visible to LLM for retry)
         /// </summary>
         /// <typeparam name="TIn">The type of the value contained in the Result.</typeparam>
         /// <typeparam name="TOut">The type to transform the Result value into before serialization.</typeparam>
@@ -37,7 +37,7 @@ namespace Core.Infrastructure.McpServer.Extensions
         /// or an error result for tool execution failures.
         /// </returns>
         /// <exception cref="McpException">
-        /// Thrown when the Result contains a ProtocolError (invalid client input).
+        /// Thrown when the Result contains a validation or configuration error.
         /// </exception>
         public static CallToolResult ToCallToolResult<TIn, TOut>(this Result<TIn, Error> source, Func<TIn, TOut> map)
         {
@@ -65,8 +65,8 @@ namespace Core.Infrastructure.McpServer.Extensions
         /// <summary>
         /// Converts a Result directly to a CallToolResult for MCP tool responses.
         /// - On success: Returns CallToolResult with JSON-serialized value as content
-        /// - On ProtocolError: Throws McpException (invalid parameters, invisible to LLM)
-        /// - On ToolError: Returns CallToolResult.IsError (operational failure, visible to LLM for retry)
+        /// - On validation/configuration error: Throws McpException (invisible to LLM)
+        /// - On operational error: Returns CallToolResult.IsError (visible to LLM for retry)
         /// </summary>
         /// <typeparam name="T">The type of the value contained in the Result.</typeparam>
         /// <param name="source">The Result object to convert.</param>
@@ -75,7 +75,7 @@ namespace Core.Infrastructure.McpServer.Extensions
         /// or an error result for tool execution failures.
         /// </returns>
         /// <exception cref="McpException">
-        /// Thrown when the Result contains a ProtocolError (invalid client input).
+        /// Thrown when the Result contains a validation or configuration error.
         /// </exception>
         public static CallToolResult ToCallToolResult<T>(this Result<T, Error> source)
         {
@@ -97,8 +97,8 @@ namespace Core.Infrastructure.McpServer.Extensions
         /// <summary>
         /// Converts an awaitable Result to a CallToolResult for MCP tool responses.
         /// - On success: Returns CallToolResult with JSON-serialized transformed value as content
-        /// - On ProtocolError: Throws McpException (invalid parameters, invisible to LLM)
-        /// - On ToolError: Returns CallToolResult.IsError (operational failure, visible to LLM for retry)
+        /// - On validation/configuration error: Throws McpException (invisible to LLM)
+        /// - On operational error: Returns CallToolResult.IsError (visible to LLM for retry)
         /// </summary>
         /// <typeparam name="TIn">The type of the value contained in the Result.</typeparam>
         /// <typeparam name="TOut">The type to transform the Result value into before serialization.</typeparam>
@@ -109,7 +109,7 @@ namespace Core.Infrastructure.McpServer.Extensions
         /// or an error result for tool execution failures.
         /// </returns>
         /// <exception cref="McpException">
-        /// Thrown when the Result contains a ProtocolError (invalid client input).
+        /// Thrown when the Result contains a validation or configuration error.
         /// </exception>
         public static async Task<CallToolResult> ToCallToolResult<TIn, TOut>(this Task<Result<TIn, Error>> awaitableSource, Func<TIn, TOut> map)
         {
@@ -120,8 +120,8 @@ namespace Core.Infrastructure.McpServer.Extensions
         /// <summary>
         /// Converts an awaitable Result directly to a CallToolResult for MCP tool responses.
         /// - On success: Returns CallToolResult with JSON-serialized value as content
-        /// - On ProtocolError: Throws McpException (invalid parameters, invisible to LLM)
-        /// - On ToolError: Returns CallToolResult.IsError (operational failure, visible to LLM for retry)
+        /// - On validation/configuration error: Throws McpException (invisible to LLM)
+        /// - On operational error: Returns CallToolResult.IsError (visible to LLM for retry)
         /// </summary>
         /// <typeparam name="T">The type of the value contained in the Result.</typeparam>
         /// <param name="awaitableSource">A task that resolves to a Result.</param>
@@ -130,7 +130,7 @@ namespace Core.Infrastructure.McpServer.Extensions
         /// or an error result for tool execution failures.
         /// </returns>
         /// <exception cref="McpException">
-        /// Thrown when the Result contains a ProtocolError (invalid client input).
+        /// Thrown when the Result contains a validation or configuration error.
         /// </exception>
         public static async Task<CallToolResult> ToCallToolResult<T>(this Task<Result<T, Error>> awaitableSource)
         {
@@ -139,29 +139,29 @@ namespace Core.Infrastructure.McpServer.Extensions
         }
 
         /// <summary>
-        /// Converts an Error to a CallToolResult or throws McpException based on error type.
-        /// - ProtocolError: Throws McpException (invalid parameters, invisible to LLM)
-        /// - ToolError: Returns CallToolResult.IsError (operational failure, visible to LLM for retry)
+        /// Converts an Error to a CallToolResult or throws McpException based on error code hierarchy.
+        /// - Validation or Configuration errors: Throws McpException (invisible to LLM)
+        /// - All other errors: Returns CallToolResult.IsError (visible to LLM for retry)
         /// </summary>
         /// <param name="error">The error to convert.</param>
-        /// <returns>A CallToolResult for tool execution errors.</returns>
-        /// <exception cref="McpException">Thrown for protocol-level errors (invalid parameters).</exception>
+        /// <returns>A CallToolResult for operational errors.</returns>
+        /// <exception cref="McpException">Thrown for validation or configuration errors.</exception>
         private static CallToolResult ToCallToolResult(this Error error)
         {
-            return error switch
+            if (error.Is(ErrorCodes.Validation._) || error.Is(ErrorCodes.Internal.Configuration))
             {
-                ProtocolError protocolError => throw new McpException(FormatErrorMessage(protocolError)),
-                ToolError toolError => new CallToolResult
-                {
-                    Content = [new TextContentBlock { Text = FormatErrorMessage(toolError) }],
-                    IsError = true
-                },
-                _ => throw new InvalidOperationException($"Unknown error type: {error.GetType().Name}")
+                throw new McpException(FormatErrorMessage(error));
+            }
+
+            return new CallToolResult
+            {
+                Content = [new TextContentBlock { Text = FormatErrorMessage(error) }],
+                IsError = true
             };
         }
 
         /// <summary>
-        /// Formats an error message including error code and context if available.
+        /// Formats an error message including error code and metadata if available.
         /// </summary>
         /// <param name="error">The error to format.</param>
         /// <returns>A formatted error message.</returns>
@@ -169,9 +169,9 @@ namespace Core.Infrastructure.McpServer.Extensions
         {
             var message = $"[{error.Code}] {error.Message}";
 
-            if (error.Context != null && error.Context.Count > 0)
+            if (error.Metadata != null && error.Metadata.Count > 0)
             {
-                var contextJson = JsonSerializer.Serialize(error.Context, JsonOptions);
+                var contextJson = JsonSerializer.Serialize(error.Metadata, JsonOptions);
                 message = $"{message}\nContext: {contextJson}";
             }
 

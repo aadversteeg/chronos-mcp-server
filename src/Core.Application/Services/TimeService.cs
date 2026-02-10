@@ -1,8 +1,9 @@
 using System;
 using System.Threading.Tasks;
+using Ave.Extensions.ErrorPaths;
+using Ave.Extensions.Functional;
 using Microsoft.Extensions.Logging;
 using Core.Application.Models;
-using Ave.Extensions.Functional;
 using Core.Application.Extensions;
 
 namespace Core.Application.Services
@@ -38,7 +39,7 @@ namespace Core.Application.Services
         {
             if (_defaultTimeZoneId == null)
             {
-                return Result<TimeZoneId, Error>.Failure(ProtocolErrors.NoDefaultTimeZoneId);
+                return Result<TimeZoneId, Error>.Failure(ChronosErrors.NoDefaultTimeZoneId);
             }
 
             return Result<TimeZoneId, Error>.Success(_defaultTimeZoneId);
@@ -73,13 +74,13 @@ namespace Core.Application.Services
             catch (TimeZoneNotFoundException)
             {
                 _logger.LogError("Timezone '{TimezoneId}' was not found", timezoneId);
-                return Result<TimeZoneInfo, Error>.Failure(ToolErrors.TimeZoneNotFound(timezoneId));
+                return Result<TimeZoneInfo, Error>.Failure(ChronosErrors.TimeZoneNotFound(timezoneId));
             }
             catch (InvalidTimeZoneException ex)
             {
                 _logger.LogError(ex, "Timezone '{TimezoneId}' has corrupted data", timezoneId);
                 return Result<TimeZoneInfo, Error>.Failure(
-                    ToolErrors.InvalidTimeZoneData(timezoneId, ex.Message));
+                    ChronosErrors.InvalidTimeZoneData(timezoneId, ex.Message));
             }
         }
 
@@ -106,7 +107,7 @@ namespace Core.Application.Services
             {
                 _logger.LogError(ex, "Failed to convert time for timezone '{TimezoneId}'", timeZone.Id);
                 return Result<DateTimeWithTimeZoneId, Error>.Failure(
-                    ToolErrors.TimeZoneConversionFailed(timeZone.Id, ex.Message));
+                    ChronosErrors.TimeZoneConversionFailed(timeZone.Id, ex.Message));
             }
 
             // TimeZoneInfo.Id is guaranteed to be valid since we successfully loaded it

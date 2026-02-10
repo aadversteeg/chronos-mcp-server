@@ -1,4 +1,5 @@
-﻿using Ave.Extensions.Functional;
+using Ave.Extensions.ErrorPaths;
+using Ave.Extensions.Functional;
 using System;
 
 namespace Core.Application.Models
@@ -16,12 +17,12 @@ namespace Core.Application.Models
         {
             if (string.IsNullOrWhiteSpace(id))
             {
-                return Result<TimeZoneId, Error>.Failure(ProtocolErrors.NullValueForTimeZoneIdValue);
+                return Result<TimeZoneId, Error>.Failure(ChronosErrors.NullValueForTimeZoneIdValue);
             }
 
             if (!TimeZoneInfo.TryFindSystemTimeZoneById(id, out var timeZone))
             {
-                return Result<TimeZoneId, Error>.Failure(ProtocolErrors.InvalidTimeZoneIdValue(id));
+                return Result<TimeZoneId, Error>.Failure(ChronosErrors.InvalidTimeZoneIdValue(id));
             }
 
             return Result<TimeZoneId, Error>.Success(new TimeZoneId(id));
