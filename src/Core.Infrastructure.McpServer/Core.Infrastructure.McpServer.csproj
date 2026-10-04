@@ -47,6 +47,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="UnitTests.Infrastructure.McpServer" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
