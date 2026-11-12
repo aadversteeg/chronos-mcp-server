@@ -53,12 +53,12 @@ namespace Core.Application.Services
         }
 
         /// <inheritdoc />
-        public async Task<Result<DateTimeWithTimeZoneId, Error>> GetCurrentTimeWithTimezone(TimeZoneId timezoneId)
+        public Task<Result<DateTimeWithTimeZoneId, Error>> GetCurrentTimeWithTimezone(TimeZoneId timezoneId)
         {
             var result = GetTimeZoneInfoById(timezoneId.Value)
                 .OnSuccessBind(ConvertTimeToTimeZone);
 
-            return await Task.FromResult(result);
+            return Task.FromResult(result);
         }
 
         /// <summary>
