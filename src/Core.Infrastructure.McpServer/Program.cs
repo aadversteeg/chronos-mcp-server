@@ -1,7 +1,6 @@
 ﻿using Ave.Extensions.Functional;
 using Core.Application;
-using Core.Application.Extensions;
-using Core.Application.Models;
+using Core.Infrastructure.McpServer.Configuration;
 using Core.Infrastructure.McpServer.Tools;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,10 +36,12 @@ namespace Core.Infrastructure.McpServer
                 consoleLogOptions.LogToStandardErrorThreshold = LogLevel.Trace;
             });
 
-            var maybeDefaultTimeZoneId = builder.Configuration
-                .GetValue<string>("DefaultTimeZoneId")
-                .ToMaybe()
-                .OnSomeBind(str => TimeZoneId.Create(str).ToMaybe());
+            var configuredDefaultTimeZoneId = builder.Configuration.GetValue<string>("DefaultTimeZoneId");
+            var maybeDefaultTimeZoneId = DefaultTimeZoneIdResolver.Resolve(configuredDefaultTimeZoneId)
+                .Match(
+                    onSuccess: resolvedTimeZoneId => resolvedTimeZoneId,
+                    onError: error => throw new InvalidOperationException(
+                        $"Invalid DefaultTimeZoneId '{configuredDefaultTimeZoneId}'. {error.Message}"));
 
             builder.Services.AddApplicationServices(
                 maybeDefaultTimeZoneId,
